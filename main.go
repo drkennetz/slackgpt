@@ -2,29 +2,30 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/PullRequestInc/go-gpt3"
 	"github.com/spf13/viper"
-	"go-slack-chat-gpt3/src/chatgpt"
+	gptslack "go-slack-chat-gpt3/src/slack"
 	"log"
 	"os"
-	"strings"
 )
 
 func main() {
 	log.SetOutput(os.Stdout)
-	statement := strings.Join(os.Args[1:], "")
 	viper.SetConfigFile(".env")
 	viper.ReadInConfig()
-	apiKey := viper.GetString("API_KEY")
-	if apiKey == "" {
-		panic("Missing API KEY")
+	cgptApiKey := viper.GetString("CGPT_API_KEY")
+	if cgptApiKey == "" {
+		log.Fatalln("Missing chat-gpt API KEY")
+	}
+	slackAppToken := viper.GetString("SLACK_APP_TOKEN")
+	if slackAppToken == "" {
+		log.Fatalln("Missing slack app token")
+	}
+	slackBotToken := viper.GetString("SLACK_BOT_TOKEN")
+	if slackBotToken == "" {
+		log.Fatalln("Missing slack bot token")
 	}
 	ctx := context.Background()
-	client := gpt3.NewClient(apiKey)
-	resp, err := chatgpt.GetStringResponse(client, ctx, statement)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	fmt.Println(resp)
+	client := gpt3.NewClient(cgptApiKey)
+	gptslack.EventHandler(slackAppToken, slackBotToken, client, ctx)
 }
