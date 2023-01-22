@@ -1,4 +1,4 @@
-// Package gptslack handles slack events
+// Package gptslack handles slack appMention events and responds with chat-gpt response
 package gptslack
 
 import (
@@ -73,8 +73,6 @@ func EventHandler(appToken string, botToken string, gptClient gpt3.Client, ctx c
 	socketmodeHandler.HandleEvents(slackevents.AppMention, func(evt *socketmode.Event, client *socketmode.Client) {
 		middlewareAppMentionEvent(evt, client, gptClient, ctx)
 	})
-	//socketmodeHandler.Handle(socketmode.EventTypeEventsAPI, func(evt *socketmode.Event, client *socketmode.Client) {
-	//	middlewareEventsAPI(evt, client, gptClient, ctx)
-	//})
+
 	socketmodeHandler.RunEventLoop()
 }

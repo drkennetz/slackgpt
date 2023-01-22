@@ -50,34 +50,3 @@ func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client,
 		return
 	}
 }
-
-func middlewareEventsAPI(evt *socketmode.Event, client *socketmode.Client, gptClient gpt3.Client, ctx context.Context) {
-	fmt.Println("middlewareEventsAPI")
-	eventsAPIEvent, ok := evt.Data.(slackevents.EventsAPIEvent)
-	if !ok {
-		fmt.Printf("Ignored %+v\n", evt)
-		return
-	}
-	fmt.Printf("Event received: %+v\n", eventsAPIEvent)
-	client.Ack(*evt.Request)
-	switch eventsAPIEvent.Type {
-	case slackevents.CallbackEvent:
-		innerEvent := eventsAPIEvent.InnerEvent
-		switch ev := innerEvent.Data.(type) {
-		case *slackevents.AppMentionEvent:
-			fmt.Printf("We have been mentioned in %v\n", ev.Channel)
-			question := ev.Text
-			gpt3Resp, err := chatgpt.GetStringResponse(gptClient, ctx, question)
-			if err != nil {
-				fmt.Println("failed to get gpt3 response", err)
-				return
-			}
-			_, _, err = client.Client.PostMessage(ev.Channel, slack.MsgOptionText(gpt3Resp, false))
-			if err != nil {
-				fmt.Printf("failed posting message: %v\n", err)
-			}
-		}
-	default:
-		client.Debugf("unsupported Events API event received")
-	}
-}
