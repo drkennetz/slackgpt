@@ -22,6 +22,10 @@ func middlewareConnected(evt *socketmode.Event, client *socketmode.Client) {
 	fmt.Println("Connected to Slack with Socket Mode.")
 }
 
+func middlewareHello(evt *socketmode.Event, client *socketmode.Client) {
+	fmt.Println("Hello received from hello handler")
+}
+
 // we have to org this in such a way that this part does the chatGPT stuff
 // but it needs the tokens from the environment
 func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client, gptClient gpt3.Client, ctx context.Context) {
