@@ -9,6 +9,7 @@ import (
 	"github.com/slack-go/slack/socketmode"
 	"go-slack-chat-gpt3/src/chatgpt"
 	"log"
+	"strings"
 )
 
 func middlewareConnecting(evt *socketmode.Event, client *socketmode.Client) {
@@ -49,7 +50,8 @@ func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client,
 		fmt.Println("Failed to get gpt3 response", err)
 		return
 	}
-	_, _, err = client.Client.PostMessage(ev.Channel, slack.MsgOptionText(gpt3Resp, false))
+	responseText := strings.Join([]string{"Hello, here's what I found from chat-gpt:", "```", gpt3Resp, "```"}, " ")
+	_, _, err = client.Client.PostMessage(ev.Channel, slack.MsgOptionText(responseText, false))
 	if err != nil {
 		fmt.Printf("failed posting message: %v", err)
 		return
