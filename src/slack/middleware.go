@@ -8,28 +8,29 @@ import (
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
 	"go-slack-chat-gpt3/src/chatgpt"
+	"log"
 )
 
 func middlewareConnecting(evt *socketmode.Event, client *socketmode.Client) {
-	fmt.Println("Connecting to Slack with Socket Mode...")
+	log.Println("Connecting to Slack with Socket Mode...")
 }
 
 func middlewareConnectionError(evt *socketmode.Event, client *socketmode.Client) {
-	fmt.Println("Connection failed. Retrying later...")
+	log.Println("Connection failed. Retrying later...")
 }
 
 func middlewareConnected(evt *socketmode.Event, client *socketmode.Client) {
-	fmt.Println("Connected to Slack with Socket Mode.")
+	log.Println("Connected to Slack with Socket Mode.")
 }
 
 func middlewareHello(evt *socketmode.Event, client *socketmode.Client) {
-	fmt.Println("Hello received from hello handler")
+	log.Println("Hello received from hello handler")
 }
 
 // we have to org this in such a way that this part does the chatGPT stuff
 // but it needs the tokens from the environment
 func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client, gptClient gpt3.Client, ctx context.Context) {
-	fmt.Println("Hello from AppMention middleware")
+	log.Println("Hello from AppMention middleware")
 	eventsAPIEvent, ok := evt.Data.(slackevents.EventsAPIEvent)
 	if !ok {
 		fmt.Printf("Ignored %+v\n", evt)
@@ -41,7 +42,7 @@ func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client,
 		fmt.Printf("Ignored %+v\n", ev)
 		return
 	}
-	fmt.Printf("we have been mentioned in %v\n", ev.Channel)
+	log.Printf("we have been mentioned in %v\n", ev.Channel)
 	question := ev.Text
 	gpt3Resp, err := chatgpt.GetStringResponse(gptClient, ctx, question)
 	if err != nil {
