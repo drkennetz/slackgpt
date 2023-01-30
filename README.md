@@ -5,7 +5,7 @@ go-slack-chat-gpt is a simple slack bot server which handles [slack app mention 
 - [Contributing](#Contributing)
 - [Open an Issue](#Issues)
 - [Setup](#Setup)
-- [Installation / Running](#Building and Running)
+- [Install and Run](#Building-and-Running)
 
 ## Contributing
 pass
