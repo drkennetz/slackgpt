@@ -16,5 +16,6 @@ func GetStringResponse(client gpt3.Client, ctx context.Context, question string)
 	if err != nil {
 		return "", err
 	}
-	return resp.Choices[0].Text, nil
+	response := resp.Choices[0].Text
+	return response[2:], nil
 }

@@ -13,6 +13,7 @@ import (
 
 func fakeHttpClient() (*fakes.FakeRoundTripper, *http.Client) {
 	rt := &fakes.FakeRoundTripper{}
+
 	return rt, &http.Client{
 		Transport: rt,
 	}
