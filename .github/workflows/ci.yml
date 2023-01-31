@@ -20,6 +20,15 @@ jobs:
         echo "Threshold    : $TESTCOVERAGE_THRESHOLD %"
         go test -coverprofile=coverage.out ./...
         totalCoverage=$(go tool cover -func=coverage.out | grep total | grep -Eo '[0-9]+\.[0-9]+')
+        echo "totalCoverage=$totalCoverage" >> $GITHUB_ENV
+        echo "COVERAGE=$(go tool cover -func=coverage.out | tail -n1 | awk '{print $NF}')" >> $GITHUB_ENV
+        echo "PR_NUM=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+        REF=${{ github.ref }}
+        echo "github.ref: $REF"
+        IFS='/' read -ra PATHS <<< "$REF"
+        BRANCH_NAME="${PATHS[1]}_${PATHS[2]}"
+        echo $BRANCH_NAME
+        echo "BRANCH=$(echo ${BRANCH_NAME})" >> $GITHUB_ENV
         echo "Current test coverage: $totalCoverage %"
         if (( $(echo "$totalCoverage $TESTCOVERAGE_THRESHOLD" | awk '{print ($1 >= $2)}') )); then
             echo "PASS"
@@ -31,6 +40,21 @@ jobs:
     - if: matrix.os == 'windows-latest'
       run:
         go test -v -cover ./...
+    - if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.19.x'
+      name: Create the Badge
+      uses: schneegans/dynamic-badges-action@v1.0.0
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: bd18b47d9fb5fbca8763c96ae69edf9f
+        filename: go-slack-chat-gpt3__${{ env.BRANCH }}__pull_${{ env.PR_NUM }}.json
+        label: Test Coverage
+        message: ${{ env.COVERAGE }}
+        - if: ${{ env.totalCoverage }} >= ${{ env.COVERAGE_THRESHOLD }}
+          color: green
+          namedLogo: gocov
+        - if: ${{ env.totalCoverage }} < ${{ env.COVERAGE_THRESHOLD }}
+          color: red
+          namedLogo: gocov
 
   # setup caching in between builds to improve incremental builds
   test-cache:
