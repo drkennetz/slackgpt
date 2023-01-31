@@ -39,8 +39,6 @@ jobs:
             echo "Failed"
             exit 1
         fi
-    - if: matrix.os == 'windows-latest'
-      run: go test ./...
     - if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.19.x'
       - uses: schneegans/dynamic-badges-action@v1.0.0
         with:
