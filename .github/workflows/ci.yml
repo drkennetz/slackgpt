@@ -10,69 +10,49 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/setup-go@v3
-      with:
-        go-version: ${{ matrix.go-version }}
-    - uses: actions/checkout@v3
-    - if: matrix.os == 'ubuntu-latest'
-      run: |
-        echo "Quality Gate: checking test coverage is above threshold..."
-        echo "Threshold    : $TESTCOVERAGE_THRESHOLD %"
-        go test -coverprofile=coverage.out ./...
-        totalCov=$(go tool cover -func=coverage.out | grep total | grep -Eo '[0-9]+\.[0-9]+')
-        echo "totalCoverage=$(echo ${totalCov})" >> $GITHUB_ENV
-        cov=$(go tool cover -func=coverage.out | tail -n1 | awk '{print $NF}')
-        echo "COVERAGE=$(echo ${cov})" >> $GITHUB_ENV
-        REF=${{ github.ref }}
-        echo "github.ref: $REF"
-        IFS='/' read -ra PATHS <<< "$REF"
-        BRANCH_NAME="${PATHS[1]}_${PATHS[2]}"
-        echo $BRANCH_NAME
-        echo "BRANCH=$(echo ${BRANCH_NAME})" >> $GITHUB_ENV
-        echo "Current test coverage: $totalCoverage %"
-        if (( $(echo "$totalCov $TESTCOVERAGE_THRESHOLD" | awk '{print ($1 >= $2)}') )); then
-            echo "PASS"
-        else
-            echo "Current test coverage is below threshold. Please add more unit tests."
-            echo "Failed"
-            exit 1
-        fi
-    - if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.19.x'
-      - uses: schneegans/dynamic-badges-action@v1.0.0
+      - uses: actions/setup-go@v3
         with:
-          auth: ${{ secrets.GIST_SECRET }}
-          gistID: bd18b47d9fb5fbca8763c96ae69edf9f
-          filename: go-slack-chat-gpt3__${{ env.BRANCH }}.json
-          label: Test Coverage
-          message: ${{ env.COVERAGE }}
-          - if: ${{ env.totalCoverage }} >= ${{ env.COVERAGE_THRESHOLD }}
-            color: green
-            namedLogo: gocov
-          - if: ${{ env.totalCoverage }} < ${{ env.COVERAGE_THRESHOLD }}
-            color: red
-            namedLogo: gocov
+          go-version: ${{ matrix.go-version }}
+      - uses: actions/checkout@v3
+      - if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+        run: |
+          echo "Quality Gate: checking test coverage is above threshold..."
+          echo "Threshold    : $TESTCOVERAGE_THRESHOLD %"
+          go test -coverprofile=coverage.out ./...
+          totalCoverage=$(go tool cover -func=coverage.out | grep total | grep -Eo '[0-9]+\.[0-9]+')
+          echo "Current test coverage: $totalCoverage %"
+          if (( $(echo "$totalCoverage $TESTCOVERAGE_THRESHOLD" | awk '{print ($1 >= $2)}') )); then
+              echo "PASS"
+          else
+              echo "Current test coverage is below threshold. Please add more unit tests."
+              echo "Failed"
+              exit 1
+          fi
+      - if: matrix.os == 'windows-latest'
+        run:
+          go test -v -cover ./...
 
   # setup caching in between builds to improve incremental builds
   test-cache:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/setup-go@v3
-      with:
-        go-version: 1.19.x
-    - uses: actions/checkout@v3
-    - uses: actions/cache@v3
-      with:
-        # in order:
-        # * Module download cache
-        # * Build cache (linux)
-        # * Build cache (mac)
-        # * Build cache (windows)
-        path: |
-          ~/go/pkg/mod
-          ~/.cache/go-build
-          ~/Library/Caches/go-build
-          ~\AppData\Local\go-build
-        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-${{ matrix.go-version }}-
-    - run: go test ./...
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          # in order:
+          # * Module download cache
+          # * Build cache (linux)
+          # * Build cache (mac)
+          # * Build cache (windows)
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~\AppData\Local\go-build
+          key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ matrix.go-version }}-
+      - run: go test ./...
