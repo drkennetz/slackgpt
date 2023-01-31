@@ -20,8 +20,9 @@ jobs:
         echo "Threshold    : $TESTCOVERAGE_THRESHOLD %"
         go test -coverprofile=coverage.out ./...
         totalCoverage=$(go tool cover -func=coverage.out | grep total | grep -Eo '[0-9]+\.[0-9]+')
-        echo "totalCoverage=$totalCoverage" >> $GITHUB_ENV
-        echo "COVERAGE=$(go tool cover -func=coverage.out | tail -n1 | awk '{print $NF}')" >> $GITHUB_ENV
+        echo "totalCoverage=$(echo ${totalCoverage})" >> $GITHUB_ENV
+        cov=$(go tool cover -func=coverage.out | tail -n1 | awk '{print $NF}')
+        echo "COVERAGE=$(echo ${cov})" >> $GITHUB_ENV
         echo "PR_NUM=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
         REF=${{ github.ref }}
         echo "github.ref: $REF"
