@@ -23,8 +23,6 @@ jobs:
         echo "totalCoverage=$(echo ${totalCov})" >> $GITHUB_ENV
         cov=$(go tool cover -func=coverage.out | tail -n1 | awk '{print $NF}')
         echo "COVERAGE=$(echo ${cov})" >> $GITHUB_ENV
-        pr_num=${{ github.event.pull_request.number }}
-        echo "PR_NUM=$(echo ${pr_num})" >> $GITHUB_ENV
         REF=${{ github.ref }}
         echo "github.ref: $REF"
         IFS='/' read -ra PATHS <<< "$REF"
@@ -44,7 +42,7 @@ jobs:
         with:
           auth: ${{ secrets.GIST_SECRET }}
           gistID: bd18b47d9fb5fbca8763c96ae69edf9f
-          filename: go-slack-chat-gpt3__${{ env.BRANCH }}__pull_${{ env.PR_NUM }}.json
+          filename: go-slack-chat-gpt3__${{ env.BRANCH }}.json
           label: Test Coverage
           message: ${{ env.COVERAGE }}
           - if: ${{ env.totalCoverage }} >= ${{ env.COVERAGE_THRESHOLD }}
