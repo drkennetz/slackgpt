@@ -41,7 +41,6 @@ jobs:
       run: |
         go test -v -cover ./...
     - if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.19.x'
-      name: Create the Badge
       uses: schneegans/dynamic-badges-action@v1.0.0
       with:
         auth: ${{ secrets.GIST_SECRET }}
