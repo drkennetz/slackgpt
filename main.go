@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/PullRequestInc/go-gpt3"
+	"github.com/alexflint/go-arg"
 	"github.com/spf13/viper"
 	gptslack "go-slack-chat-gpt3/src/slack"
 	"log"
@@ -12,17 +13,36 @@ import (
 	"syscall"
 )
 
+type args struct {
+	Config string `arg:"required,-c,--config" help:"config file with slack app+bot tokens, chat-gpt API token"`
+}
+
+func (args) Version() string {
+	return "VERSION: development\n"
+}
+
+func (args) Description() string {
+	return "This program is a slack bot that sends mentions to chat-gpt and responds with chat-gpt result\n"
+}
+
+func (args) Epilogue() string {
+	return "for more information, visit https://github.com/drkennetz/go-slack-chat-gpt3"
+}
+
 func main() {
 	// Perform the startup and shutdown sequence
+	var arguments args
+	arg.MustParse(&arguments)
+
 	log.New(os.Stdout, "slack-gpt", log.Ldate|log.Ltime|log.Lshortfile)
-	if err := run(); err != nil {
+	if err := run(arguments.Config); err != nil {
 		os.Exit(1)
 	}
 }
 
-func run() error {
+func run(config string) error {
 	log.SetOutput(os.Stdout)
-	viper.SetConfigFile(".env")
+	viper.SetConfigFile(config)
 	viper.ReadInConfig()
 	cgptApiKey := viper.GetString("CGPT_API_KEY")
 	if cgptApiKey == "" {
@@ -36,6 +56,7 @@ func run() error {
 	if slackBotToken == "" {
 		log.Fatalln("Missing slack bot token")
 	}
+	log.Println("Config values parsed")
 	ctx := context.Background()
 	client := gpt3.NewClient(cgptApiKey)
 
