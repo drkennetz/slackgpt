@@ -15,7 +15,7 @@ We welcome contributions to go-slack-chat-gpt3! Whether it's fixing a bug, creat
 
 1. Fork the repository and clone it to your local machine.
 2. Create a new branch for your changes.
-3. Make the changes and test them thoroughly.
+3. Make the changes and ensure that at least 70% test coverage is achieved for the new code.
 4. Commit your changes and push them to your forked repository.
 5. Submit a pull request to the main repository with a detailed explanation of your changes and why they are needed.
 6. Wait for the maintainers to review and merge your pull request.
