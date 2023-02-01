@@ -50,6 +50,5 @@ func EventHandler(appToken string, botToken string, gptClient gpt3.Client, ctx c
 	socketmodeHandler.HandleEvents(slackevents.AppMention, func(evt *socketmode.Event, client *socketmode.Client) {
 		middlewareAppMentionEvent(evt, client, gptClient, ctx)
 	})
-	socketmodeHandler.Client.StartRTM()
 	return socketmodeHandler.RunEventLoop()
 }
