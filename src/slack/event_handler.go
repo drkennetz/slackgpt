@@ -33,14 +33,14 @@ func EventHandler(appToken string, botToken string, gptClient gpt3.Client, ctx c
 	api := slack.New(
 		botToken,
 		slack.OptionDebug(true),
-		slack.OptionLog(log.New(os.Stdout, "api: ", log.Lshortfile|log.LstdFlags)),
+		slack.OptionLog(log.New(os.Stdout, "api: ", log.Ldate|log.Ltime|log.Lshortfile)),
 		slack.OptionAppLevelToken(appToken),
 	)
 
 	client := socketmode.New(
 		api,
 		socketmode.OptionDebug(true),
-		socketmode.OptionLog(log.New(os.Stdout, "socketmode: ", log.Lshortfile|log.LstdFlags)),
+		socketmode.OptionLog(log.New(os.Stdout, "socketmode: ", log.Ldate|log.Ltime|log.Lshortfile)),
 	)
 	socketmodeHandler := socketmode.NewSocketmodeHandler(client)
 	socketmodeHandler.Handle(socketmode.EventTypeConnecting, middlewareConnecting)
@@ -50,6 +50,6 @@ func EventHandler(appToken string, botToken string, gptClient gpt3.Client, ctx c
 	socketmodeHandler.HandleEvents(slackevents.AppMention, func(evt *socketmode.Event, client *socketmode.Client) {
 		middlewareAppMentionEvent(evt, client, gptClient, ctx)
 	})
-
+	socketmodeHandler.Client.StartRTM()
 	return socketmodeHandler.RunEventLoop()
 }
