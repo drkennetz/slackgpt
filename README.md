@@ -39,7 +39,7 @@ go-slack-chat-gpt is a simple slack bot server which handles slack app mention e
 - [Setup](#Setup)
 - [Contributing](#Contributing)
 - [Open an Issue](#Issues)
-
+- [Code of Conduct](#Code-of-Conduct)
 
 
 ## Quick Start
@@ -196,3 +196,6 @@ To submit an issue, select the issue template that most closely
 corresponds with your issue type and submit. Someone will get to you soon!
 
 ## Code of Conduct
+Please note that go-slack-chat-gpt3 has a [Code of Conduct](./CODE_OF_CONDUCT.md).
+By participating in this community, you agree to abide by its rules. 
+Failure to abide will result in warning and potentially expulsion from this community.
