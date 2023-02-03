@@ -192,4 +192,7 @@ api: 2023/02/02 20:14:28 socket_mode.go:30: ...
 Please follow the [Contribution File](./Contribution.md) to contribute to this repo.
 
 ## Issues
-To submit an issue, select the issue template that most closely corresponds with your issue type and submit. Someone will get to you soon!
+To submit an issue, select the issue template that most closely 
+corresponds with your issue type and submit. Someone will get to you soon!
+
+## Code of Conduct
