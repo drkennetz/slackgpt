@@ -48,7 +48,7 @@ permanently any contributor for other behaviors that they deem inappropriate,
 threatening, offensive, or harmful.
 
 ## Reporting Unacceptable Behavior:
-If you encounter any behavior that violates this Code of Conduct, please immediately notify the Project maintainers by email at [INSERT CONTACT EMAIL]. If possible, please include a description of the behavior and the identity of the person involved. 
+If you encounter any behavior that violates this Code of Conduct, please immediately notify the Project maintainers by email at [this](mailto:drkennetz@gmail.com). If possible, please include a description of the behavior and the identity of the person involved. 
 
 ## Consequences:
 If the Project determines that a participant has engaged in behavior that violates this Code of Conduct, it may take any action it deems appropriate, including warning the participant, banning the participant from the Project, or reporting the participant to the appropriate authorities. 
