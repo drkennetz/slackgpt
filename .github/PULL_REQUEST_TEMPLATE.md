@@ -24,3 +24,9 @@
 ## Additional context
 
 [Add any additional information that may be relevant to this pull request.]
+
+## Important Note
+
+[If your pull request is solving or solving a part of an **Issue** mention that.] <br/>
+[If it completely solves the issue use **"Closes #'Issue_Hash_number'"**] <br/>
+[If it only solves a part of the issue use **"#'Issue_Hash_number'"** only]
