@@ -10,6 +10,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 )
 
@@ -36,14 +38,26 @@ func main() {
 
 	log.New(os.Stdout, "slack-gpt", log.Ldate|log.Ltime|log.Lshortfile)
 	if err := run(arguments.Config); err != nil {
+		log.Println(err)
 		os.Exit(1)
 	}
 }
 
 func run(config string) error {
 	log.SetOutput(os.Stdout)
-	viper.SetConfigFile(config)
-	viper.ReadInConfig()
+	path := filepath.Dir(config)
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return err
+	}
+	ext := strings.Replace(filepath.Ext(config), ".", "", -1)
+	name := filepath.Base(config)
+	viper.AddConfigPath(abs)
+	viper.SetConfigName(name)
+	viper.SetConfigType(ext)
+	if err = viper.ReadInConfig(); err != nil {
+		return err
+	}
 	cgptApiKey := viper.GetString("CGPT_API_KEY")
 	if cgptApiKey == "" {
 		log.Fatalln("Missing chat-gpt API KEY")
@@ -76,7 +90,7 @@ func run(config string) error {
 		handlerErrors <- gptslack.EventHandler(slackAppToken, slackBotToken, client, ctx)
 	}()
 
-	// Blocking main and wiating for shutdown
+	// Blocking main and waiting for shutdown
 	// This is a blocking select to handle errors - not shutdown
 	select {
 	case err := <-handlerErrors:
@@ -90,7 +104,7 @@ func run(config string) error {
 		defer cancel()
 
 		log.Println("closing context", timeoutContext)
-		// Asking listener to shutdown and shed load
+		// Asking listener to shut down and shed load
 		log.Println("Shutting down..")
 	}
 	return nil
