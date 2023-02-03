@@ -7,11 +7,6 @@
     <a href="https://github.com/drkennetz/go-slack-chat-gpt3">
         <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/drkennetz/go-slack-chat-gpt3/ci.yml">
     </a>
-<!--    <a href="https://github.com/drkennetz/go-slack-chat-gpt3">
-        <img src="https://img.shields.io/github/workflow/status/drkennetz/go-slack-chat-gpt3/Service%20Testing/main" alt="Service Testing Status">
-    </a> -->
-    <a href="#sponsors" alt="Sponsors on Open Collective">
-        <img alt="GitHub Sponsors" src="https://img.shields.io/github/sponsors/drkennetz"></a>
     <a href="https://github.com/drkennetz/go-slack-chat-gpt3/issues">
         <img src="https://img.shields.io/github/issues/drkennetz/go-slack-chat-gpt3" alt="Issues">
    </a>
