@@ -36,9 +36,9 @@ go-slack-chat-gpt is a simple slack bot server which handles slack app mention e
 
 ## Table of Contents
 - [Quick Start](#Quick-Start)
+- [Setup](#Setup)
 - [Contributing](#Contributing)
 - [Open an Issue](#Issues)
-- [Setup](#Setup)
 
 
 
@@ -46,7 +46,7 @@ go-slack-chat-gpt is a simple slack bot server which handles slack app mention e
 Build the binary, add tokens to config, and run!
 
 ### Config
-The config must contain three entries separated by an equals (=) sign. Two are required by slack, and one is required by chat-gpt.
+The config is parsed by [viper](https://github.com/spf13/viper) and must conform to the [viper supported config types](https://github.com/spf13/viper#reading-config-files).
 
 A walk through of getting a chat-gpt token, setting up a slack bot and giving it proper permissions, and getting tokens will be discussed in detail further down the README. This section will just ensure that you build the tool and have it functional on the CLI.
 ```
@@ -81,16 +81,12 @@ socketmode: 2023/02/01 14:53:19 socket_mode_managed_conn.go:258: Starting Socket
 ...
 ```
 
-## Contributing
-pass
-
-## Issues
-issues
-
 # Setup
 In order to run the slack-chat-gpt app, you need a chat-gpt api key, a slack bot with correct OAuth permissions and a bot token, and a slack app token.
 While the chat-gpt api key is fairly straightforward, the slack bot is a bit more challenging so
 a walk-through will be included below.
+
+The config is parsed by [viper](https://github.com/spf13/viper) and must conform to the [viper supported config types](https://github.com/spf13/viper#reading-config-files).
 
 ## Chat-GPT API Key
 For the chat-gpt API key, sign up for an account and copy the key: https://platform.openai.com/account/api-keys.
@@ -179,7 +175,21 @@ SLACK_APP_TOKEN=xapp-...
 go build -o ./bin/slackgpt
 
 ## config.txt is my config
-./bin/slackgpt -c ./config.txt
+## Note, the filename must end in .env to use the config format above
+./bin/slackgpt -c ./config.env
 
-
+socketmode: 2023/02/02 20:14:28 socket_mode_managed_conn.go:258: Starting SocketMode
+2023/02/02 20:14:28 Connecting to Slack with Socket Mode...
+api: 2023/02/02 20:14:28 socket_mode.go:30: ...
+...
 ```
+
+24. Try out in slack:
+
+![example](./example/example_chat.png)
+
+## Contributing
+Please follow the [Contribution File](./Contribution.md) to contribute to this repo.
+
+## Issues
+To submit an issue, select the issue template that most closely corresponds with your issue type and submit. Someone will get to you soon!
