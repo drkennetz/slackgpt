@@ -9,26 +9,10 @@ import (
 	"github.com/slack-go/slack/socketmode"
 	"log"
 	"os"
-	"strings"
 )
 
 // EventHandler handles slack events
 func EventHandler(appToken string, botToken string, gptClient gpt3.Client, ctx context.Context) error {
-	if appToken == "" {
-		panic("need an app token to listen to events")
-	}
-
-	if !strings.HasPrefix(appToken, "xapp-") {
-		panic("slack app tokens start with xapp- but the one passed does not")
-	}
-
-	if botToken == "" {
-		panic("need a bot token to interact with workspace")
-	}
-
-	if !strings.HasPrefix(botToken, "xoxb-") {
-		panic("slack bot tokens start with xoxb- but the one passed does not.")
-	}
 
 	api := slack.New(
 		botToken,
