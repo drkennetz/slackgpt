@@ -99,7 +99,7 @@ func TestLoadConfig(t *testing.T) {
 			args{
 				configParts{
 					"./test_files",
-					"no_cgpt.env",
+					"no_cgpt.json",
 					"env",
 				},
 			},
@@ -113,7 +113,7 @@ func TestLoadConfig(t *testing.T) {
 			args{
 				configParts{
 					"./test_files",
-					"no_slack_app.env",
+					"no_slack_app.json",
 					"env",
 				},
 			},
@@ -129,7 +129,7 @@ func TestLoadConfig(t *testing.T) {
 			args{
 				configParts{
 					"./test_files",
-					"no_slack_bot.env",
+					"no_slack_bot.json",
 					"env",
 				},
 			},
@@ -146,7 +146,7 @@ func TestLoadConfig(t *testing.T) {
 			args{
 				configParts{
 					"./test_files",
-					"bad_slack_app.env",
+					"bad_slack_app.json",
 					"env",
 				},
 			},
@@ -164,7 +164,7 @@ func TestLoadConfig(t *testing.T) {
 			args{
 				configParts{
 					"./test_files",
-					"bad_slack_bot.env",
+					"bad_slack_bot.json",
 					"env",
 				},
 			},
@@ -182,7 +182,7 @@ func TestLoadConfig(t *testing.T) {
 			args{
 				configParts{
 					"./test_files",
-					"good.env",
+					"good.json",
 					"env",
 				},
 			},
