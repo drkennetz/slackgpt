@@ -86,7 +86,7 @@ func TestLoadConfig(t *testing.T) {
 				configParts{
 					"./test_files",
 					"nofile",
-					"env",
+					"json",
 				},
 			},
 			expectedResult{
@@ -95,11 +95,25 @@ func TestLoadConfig(t *testing.T) {
 			},
 		},
 		{
-			"no gpt key",
+			"unmarshalling error",
 			args{
 				configParts{
 					"./test_files",
 					"no_cgpt.json",
+					"json",
+				},
+			},
+			expectedResult{
+				Config{},
+				errors.New("While parsing config: unexpected end of JSON input"),
+			},
+		},
+		{
+			"no gpt key",
+			args{
+				configParts{
+					"./test_files",
+					"no_cgpt",
 					"env",
 				},
 			},
@@ -114,7 +128,7 @@ func TestLoadConfig(t *testing.T) {
 				configParts{
 					"./test_files",
 					"no_slack_app.json",
-					"env",
+					"json",
 				},
 			},
 			expectedResult{
@@ -130,7 +144,7 @@ func TestLoadConfig(t *testing.T) {
 				configParts{
 					"./test_files",
 					"no_slack_bot.json",
-					"env",
+					"json",
 				},
 			},
 			expectedResult{
@@ -147,7 +161,7 @@ func TestLoadConfig(t *testing.T) {
 				configParts{
 					"./test_files",
 					"bad_slack_app.json",
-					"env",
+					"json",
 				},
 			},
 			expectedResult{
@@ -165,7 +179,7 @@ func TestLoadConfig(t *testing.T) {
 				configParts{
 					"./test_files",
 					"bad_slack_bot.json",
-					"env",
+					"json",
 				},
 			},
 			expectedResult{
@@ -183,7 +197,7 @@ func TestLoadConfig(t *testing.T) {
 				configParts{
 					"./test_files",
 					"good.json",
-					"env",
+					"json",
 				},
 			},
 			expectedResult{
