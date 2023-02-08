@@ -5,18 +5,17 @@ import (
 	"fmt"
 	"github.com/PullRequestInc/go-gpt3"
 	"github.com/alexflint/go-arg"
-	"github.com/spf13/viper"
+	configs "go-slack-chat-gpt3/config"
 	gptslack "go-slack-chat-gpt3/src/slack"
 	"log"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"strings"
 	"syscall"
 )
 
 type args struct {
 	Config string `arg:"required,-c,--config" help:"config file with slack app+bot tokens, chat-gpt API token"`
+	Type   string `arg:"-t, --type" default:"" help:"the config type [json, toml, yaml, hcl, ini, env, properties]; if not passed, inferred from file ext"`
 }
 
 func (args) Version() string {
@@ -37,42 +36,22 @@ func main() {
 	arg.MustParse(&arguments)
 
 	log.New(os.Stdout, "slack-gpt", log.Ldate|log.Ltime|log.Lshortfile)
-	if err := run(arguments.Config); err != nil {
+	if err := run(arguments.Config, arguments.Type); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
 }
 
-func run(config string) error {
+func run(config, cfgType string) error {
 	log.SetOutput(os.Stdout)
-	path := filepath.Dir(config)
-	abs, err := filepath.Abs(path)
+	cfgParts, err := configs.ParseConfigFromPath(config, cfgType)
+	cfg, err := configs.LoadConfig(cfgParts)
 	if err != nil {
 		return err
 	}
-	ext := strings.Replace(filepath.Ext(config), ".", "", -1)
-	name := filepath.Base(config)
-	viper.AddConfigPath(abs)
-	viper.SetConfigName(name)
-	viper.SetConfigType(ext)
-	if err = viper.ReadInConfig(); err != nil {
-		return err
-	}
-	cgptApiKey := viper.GetString("CGPT_API_KEY")
-	if cgptApiKey == "" {
-		log.Fatalln("Missing chat-gpt API KEY")
-	}
-	slackAppToken := viper.GetString("SLACK_APP_TOKEN")
-	if slackAppToken == "" {
-		log.Fatalln("Missing slack app token")
-	}
-	slackBotToken := viper.GetString("SLACK_BOT_TOKEN")
-	if slackBotToken == "" {
-		log.Fatalln("Missing slack bot token")
-	}
 	log.Println("Config values parsed")
 	ctx := context.Background()
-	client := gpt3.NewClient(cgptApiKey)
+	client := gpt3.NewClient(cfg.ChatGPTKey)
 
 	// make a channel to listen for an interrupt or term signal from the os
 	// use a buffered channel because the signal package requires it
@@ -87,7 +66,7 @@ func run(config string) error {
 
 	// Start the service listening for events
 	go func() {
-		handlerErrors <- gptslack.EventHandler(slackAppToken, slackBotToken, client, ctx)
+		handlerErrors <- gptslack.EventHandler(cfg.SlackAppToken, cfg.SlackBotToken, client, ctx)
 	}()
 
 	// Blocking main and waiting for shutdown

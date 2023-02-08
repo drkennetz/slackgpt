@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/PullRequestInc/go-gpt3"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
@@ -67,6 +68,9 @@ func TestMiddlewareHello(t *testing.T) {
 	assert.Equal(t, "Hello received from hello handler\n", output)
 }
 
+// Test1: Change the Data in socketmode.Event so that it isn't EventsAPIEvent
+// Test2: Change the InnerEvent type so that it isn't AppMentionEvent
+// See if we can mock the chat gpt response??
 func TestMiddlewareAppMentionEvent(t *testing.T) {
 	type payload struct {
 		Text string `json:"text"`
@@ -76,33 +80,93 @@ func TestMiddlewareAppMentionEvent(t *testing.T) {
 	}
 	send, err := json.Marshal(x)
 	assert.NoError(t, err)
-	evt := &socketmode.Event{
-		Type: socketmode.EventTypeEventsAPI,
-		Data: slackevents.EventsAPIEvent{
-			Type: "event_callback",
-			InnerEvent: slackevents.EventsAPIInnerEvent{
-				Type: string(slackevents.AppMention),
-				Data: &slackevents.AppMentionEvent{
-					Type:    string(slackevents.AppMention),
-					User:    "test",
-					Text:    "Hello, test!",
-					Channel: "app-dev",
+	type args struct {
+		event *socketmode.Event
+	}
+	type expectedResult struct {
+		e error
+	}
+	tests := []struct {
+		name string
+		arg  args
+		want expectedResult
+	}{
+		{
+			name: "nil data",
+			arg: args{
+				&socketmode.Event{
+					Type: socketmode.EventTypeEventsAPI,
+					Data: nil,
 				},
 			},
+			want: expectedResult{errors.New("miss")},
 		},
-		Request: &socketmode.Request{
-			Type:           "test",
-			NumConnections: 1,
-			ConnectionInfo: socketmode.ConnectionInfo{"test-app"},
-			Reason:         "test",
-			EnvelopeID:     "1",
-			Payload:        send,
+		{
+			name: "wrong event type",
+			arg: args{
+				&socketmode.Event{
+					Type: socketmode.EventTypeEventsAPI,
+					Data: slackevents.EventsAPIEvent{
+						Type: "event_callback",
+						InnerEvent: slackevents.EventsAPIInnerEvent{
+							Type: string(slackevents.Message),
+						},
+					},
+					Request: &socketmode.Request{
+						Type:           "test",
+						NumConnections: 1,
+						ConnectionInfo: socketmode.ConnectionInfo{"test-app"},
+						Reason:         "test",
+						EnvelopeID:     "1",
+						Payload:        send,
+					},
+				},
+			},
+			want: expectedResult{
+				errors.New("miss"),
+			},
+		},
+		{
+			name: "good event",
+			arg: args{
+				&socketmode.Event{
+					Type: socketmode.EventTypeEventsAPI,
+					Data: slackevents.EventsAPIEvent{
+						Type: "event_callback",
+						InnerEvent: slackevents.EventsAPIInnerEvent{
+							Type: string(slackevents.AppMention),
+							Data: &slackevents.AppMentionEvent{
+								Type:    string(slackevents.AppMention),
+								User:    "test",
+								Text:    "Hello, test!",
+								Channel: "app-dev",
+							},
+						},
+					},
+					Request: &socketmode.Request{
+						Type:           "test",
+						NumConnections: 1,
+						ConnectionInfo: socketmode.ConnectionInfo{"test-app"},
+						Reason:         "test",
+						EnvelopeID:     "1",
+						Payload:        send,
+					},
+				},
+			},
+			want: expectedResult{
+				errors.New("miss"),
+			},
 		},
 	}
+
 	slackClient := slack.New("test")
 	client := socketmode.New(slackClient)
 	_, httpClient := fakeHttpClient()
 	gptClient := gpt3.NewClient("test-key", gpt3.WithHTTPClient(httpClient))
 	ctx := context.Background()
-	middlewareAppMentionEvent(evt, client, gptClient, ctx)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			middlewareAppMentionEvent(tt.arg.event, client, gptClient, ctx)
+		})
+	}
 }
