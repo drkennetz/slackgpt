@@ -50,10 +50,42 @@ func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client,
 		fmt.Println("Failed to get gpt3 response", err)
 		return
 	}
-	responseText := strings.Join([]string{"Hello, here's what I found from chat-gpt:", "```", gpt3Resp, "```"}, " ")
-	_, _, err = client.Client.PostMessage(ev.Channel, slack.MsgOptionText(responseText, false))
+	_, _, err = client.Client.PostMessage(ev.Channel, slack.MsgOptionText(strings.Join([]string{"```", gpt3Resp, "```"}, ""), false))
 	if err != nil {
 		fmt.Printf("failed posting message: %v", err)
+		return
+	}
+}
+
+func middlewareMessageEvent(evt *socketmode.Event, client *socketmode.Client, gptClient gpt3.Client, ctx context.Context) {
+	log.Println("Hello from Message middleware")
+	eventsAPIEvent, ok := evt.Data.(slackevents.EventsAPIEvent)
+	// only handle non-bot-id-events
+	if !ok {
+		fmt.Printf("Ignored %+v\n", evt)
+		return
+	}
+
+	client.Ack(*evt.Request)
+	ev, ok := eventsAPIEvent.InnerEvent.Data.(*slackevents.MessageEvent)
+	if !ok {
+		fmt.Printf("Ignored %+v\n", evt)
+		return
+	}
+	if ev.BotID != "" {
+		fmt.Println("The bot will answer itself.")
+		return
+	}
+	question := ev.Text
+	gpt3Resp, err := chatgpt.GetStringResponse(gptClient, ctx, question)
+	if err != nil {
+		fmt.Printf("Failed to get gpt3 response: %v\n", err)
+		gpt3Resp = "I'm having some trouble communicating with our servers (my brain). Please try again in a little bit and hopefully the fuzz clears up."
+	}
+
+	_, _, err = client.Client.PostMessage(ev.Channel, slack.MsgOptionText(strings.Join([]string{"```", gpt3Resp, "```"}, ""), false))
+	if err != nil {
+		fmt.Printf("failed posting message: %v\n", err)
 		return
 	}
 }

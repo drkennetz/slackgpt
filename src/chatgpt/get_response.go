@@ -3,9 +3,11 @@ package chatgpt
 import (
 	"context"
 	"github.com/PullRequestInc/go-gpt3"
+	"strings"
 )
 
 func GetStringResponse(client gpt3.Client, ctx context.Context, question string) (string, error) {
+
 	resp, err := client.CompletionWithEngine(ctx, gpt3.TextDavinci003Engine, gpt3.CompletionRequest{
 		Prompt: []string{
 			question,
@@ -16,6 +18,6 @@ func GetStringResponse(client gpt3.Client, ctx context.Context, question string)
 	if err != nil {
 		return "", err
 	}
-	response := resp.Choices[0].Text
-	return response[2:], nil
+	responseText := resp.Choices[0].Text
+	return strings.TrimPrefix(responseText, "\n"), nil
 }

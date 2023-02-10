@@ -51,7 +51,7 @@ func run(config, cfgType string) error {
 	}
 	log.Println("Config values parsed")
 	ctx := context.Background()
-	client := gpt3.NewClient(cfg.ChatGPTKey)
+	client := gpt3.NewClient(cfg.ChatGPTKey, gpt3.WithTimeout(30))
 
 	// make a channel to listen for an interrupt or term signal from the os
 	// use a buffered channel because the signal package requires it

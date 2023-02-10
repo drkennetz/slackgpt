@@ -27,12 +27,16 @@ func EventHandler(appToken string, botToken string, gptClient gpt3.Client, ctx c
 		socketmode.OptionLog(log.New(os.Stdout, "socketmode: ", log.Ldate|log.Ltime|log.Lshortfile)),
 	)
 	socketmodeHandler := socketmode.NewSocketmodeHandler(client)
+	// should be a primary middleware handler, and these handle more granular events
 	socketmodeHandler.Handle(socketmode.EventTypeConnecting, middlewareConnecting)
 	socketmodeHandler.Handle(socketmode.EventTypeConnectionError, middlewareConnectionError)
 	socketmodeHandler.Handle(socketmode.EventTypeConnected, middlewareConnected)
 	socketmodeHandler.Handle(socketmode.EventTypeHello, middlewareHello)
 	socketmodeHandler.HandleEvents(slackevents.AppMention, func(evt *socketmode.Event, client *socketmode.Client) {
 		middlewareAppMentionEvent(evt, client, gptClient, ctx)
+	})
+	socketmodeHandler.HandleEvents(slackevents.Message, func(evt *socketmode.Event, client *socketmode.Client) {
+		middlewareMessageEvent(evt, client, gptClient, ctx)
 	})
 	return socketmodeHandler.RunEventLoop()
 }
