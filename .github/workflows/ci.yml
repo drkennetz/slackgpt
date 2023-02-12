@@ -15,7 +15,7 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - uses: actions/checkout@v3
       - if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-        run: go test -race -coverprofile=coverage.txt -covermode=atomic
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
       - if: matrix.os == 'windows-latest'
         run:
           go test -v -cover ./...
