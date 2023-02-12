@@ -6,6 +6,9 @@
     <a href="https://github.com/drkennetz/go-slack-chat-gpt3">
         <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/drkennetz/go-slack-chat-gpt3/ci.yml">
     </a>
+    <a href="https://codecov.io/github/drkennetz/go-slack-chat-gpt3" > 
+        <img src="https://codecov.io/github/drkennetz/go-slack-chat-gpt3/branch/main/graph/badge.svg?token=8IHKB8J1AN"/> 
+    </a>
     <a href="https://github.com/drkennetz/go-slack-chat-gpt3/issues">
         <img src="https://img.shields.io/github/issues/drkennetz/go-slack-chat-gpt3" alt="Issues">
    </a>
