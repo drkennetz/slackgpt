@@ -47,8 +47,8 @@ func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client,
 	question := ev.Text
 	gpt3Resp, err := chatgpt.GetStringResponse(gptClient, ctx, question)
 	if err != nil {
-		fmt.Println("Failed to get gpt3 response", err)
-		return
+		fmt.Printf("Failed to get gpt3 response: %v\n", err)
+		gpt3Resp = "I'm having some trouble communicating with our servers (my brain). Please try again in a little bit and hopefully the fuzz clears up."
 	}
 	_, _, err = client.Client.PostMessage(ev.Channel, slack.MsgOptionText(strings.Join([]string{"```", gpt3Resp, "```"}, ""), false))
 	if err != nil {
