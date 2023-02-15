@@ -7,24 +7,22 @@ import (
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
-	"log"
-	"os"
+	"go.uber.org/zap"
 )
 
 // EventHandler handles slack events
-func EventHandler(appToken string, botToken string, gptClient gpt3.Client, ctx context.Context) error {
+func EventHandler(appToken string, botToken string, gptClient gpt3.Client, ctx context.Context, log *zap.SugaredLogger) error {
 
 	api := slack.New(
 		botToken,
 		slack.OptionDebug(true),
-		slack.OptionLog(log.New(os.Stdout, "api: ", log.Ldate|log.Ltime|log.Lshortfile)),
+		slack.OptionLog(zap.NewStdLog(log.Desugar())),
 		slack.OptionAppLevelToken(appToken),
 	)
-
 	client := socketmode.New(
 		api,
 		socketmode.OptionDebug(true),
-		socketmode.OptionLog(log.New(os.Stdout, "socketmode: ", log.Ldate|log.Ltime|log.Lshortfile)),
+		socketmode.OptionLog(zap.NewStdLog(log.Desugar())),
 	)
 	socketmodeHandler := socketmode.NewSocketmodeHandler(client)
 	// should be a primary middleware handler, and these handle more granular events

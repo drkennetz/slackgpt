@@ -7,9 +7,12 @@ import (
 	"github.com/alexflint/go-arg"
 	configs "go-slack-chat-gpt3/config"
 	gptslack "go-slack-chat-gpt3/src/slack"
-	"log"
+	"go.uber.org/automaxprocs/maxprocs"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 )
 
@@ -32,25 +35,40 @@ func (args) Epilogue() string {
 
 func main() {
 	// Perform the startup and shutdown sequence
+	log, err := initLogger("SLACKGPT-BOT")
+	if err != nil {
+		fmt.Println("Error constructing logger:", err)
+		os.Exit(1)
+	}
+	defer log.Sync()
+
 	var arguments args
 	arg.MustParse(&arguments)
 
-	log.New(os.Stdout, "slack-gpt", log.Ldate|log.Ltime|log.Lshortfile)
-	if err := run(arguments.Config, arguments.Type); err != nil {
-		log.Println(err)
+	log.Infow("startup", "version", arguments.Version())
+	if err := run(arguments.Config, arguments.Type, log); err != nil {
 		os.Exit(1)
 	}
 }
 
-func run(config, cfgType string) error {
-	log.SetOutput(os.Stdout)
+func run(config, cfgType string, log *zap.SugaredLogger) error {
+	// ========================
+	// GOMAXPROCS
+
+	// set the correct number of threads for the service
+	// based on either machine or quotas in kub
+	if _, err := maxprocs.Set(); err != nil {
+		return fmt.Errorf("maxprocs: %w", err)
+	}
+	log.Infow("startup", "GOMAXPROCS", runtime.GOMAXPROCS(0))
 	cfgParts, err := configs.ParseConfigFromPath(config, cfgType)
 	cfg, err := configs.LoadConfig(cfgParts)
 	if err != nil {
 		return err
 	}
-	log.Println("Config values parsed")
 	ctx := context.Background()
+
+	log.Infow("startup", "status", "gpt3 client started")
 	client := gpt3.NewClient(cfg.ChatGPTKey)
 
 	// make a channel to listen for an interrupt or term signal from the os
@@ -66,7 +84,9 @@ func run(config, cfgType string) error {
 
 	// Start the service listening for events
 	go func() {
-		handlerErrors <- gptslack.EventHandler(cfg.SlackAppToken, cfg.SlackBotToken, client, ctx)
+		log.Infow("startup", "status", "slack event handler started")
+		// refactor this to take in a struct
+		handlerErrors <- gptslack.EventHandler(cfg.SlackAppToken, cfg.SlackBotToken, client, ctx, log)
 	}()
 
 	// Blocking main and waiting for shutdown
@@ -76,15 +96,26 @@ func run(config, cfgType string) error {
 		return fmt.Errorf("handler error: %w", err)
 
 	case sig := <-shutdown:
-
-		log.Println("received shutdown signal, ", sig)
+		log.Infow("shutdown", "status", "shutdown started", "signal", sig)
+		defer log.Infow("shutdown", "status", "shutdown complete", "signal", sig)
 		// give outstanding requests a deadline for completion
-		timeoutContext, cancel := context.WithTimeout(ctx, 10)
+		_, cancel := context.WithTimeout(ctx, 10)
 		defer cancel()
-
-		log.Println("closing context", timeoutContext)
-		// Asking listener to shut down and shed load
-		log.Println("Shutting down..")
 	}
 	return nil
+}
+
+func initLogger(service string) (*zap.SugaredLogger, error) {
+	config := zap.NewProductionConfig()
+	config.OutputPaths = []string{"stdout"}
+	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	config.DisableStacktrace = true
+	config.InitialFields = map[string]any{
+		"service": service,
+	}
+	log, err := config.Build()
+	if err != nil {
+		return nil, err
+	}
+	return log.Sugar(), nil
 }
