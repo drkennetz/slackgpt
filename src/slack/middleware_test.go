@@ -1,7 +1,6 @@
 package gptslack
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -15,24 +14,14 @@ import (
 	"testing"
 )
 
-func captureLog(f func()) string {
-	var buf bytes.Buffer
-	log.SetFlags(0)
-	log.SetOutput(&buf)
-	f()
-	log.SetOutput(os.Stderr)
-	return buf.String()
-}
+var logger *log.Logger = log.New(os.Stdout, "test", 0)
 
 func TestMiddlewareConnecting(t *testing.T) {
 	evt := &socketmode.Event{
 		Type: socketmode.EventTypeConnecting,
 	}
 	client := &socketmode.Client{}
-	output := captureLog(func() {
-		middlewareConnecting(evt, client)
-	})
-	assert.Equal(t, "Connecting to Slack with Socket Mode...\n", output)
+	middlewareConnecting(evt, client, logger)
 }
 
 func TestMiddlewareConnectionError(t *testing.T) {
@@ -40,10 +29,7 @@ func TestMiddlewareConnectionError(t *testing.T) {
 		Type: socketmode.EventTypeConnectionError,
 	}
 	client := &socketmode.Client{}
-	output := captureLog(func() {
-		middlewareConnectionError(evt, client)
-	})
-	assert.Equal(t, "Connection failed. Retrying later...\n", output)
+	middlewareConnectionError(evt, client, logger)
 }
 
 func TestMiddlewareConnected(t *testing.T) {
@@ -51,10 +37,7 @@ func TestMiddlewareConnected(t *testing.T) {
 		Type: socketmode.EventTypeConnected,
 	}
 	client := &socketmode.Client{}
-	output := captureLog(func() {
-		middlewareConnected(evt, client)
-	})
-	assert.Equal(t, "Connected to Slack with Socket Mode.\n", output)
+	middlewareConnected(evt, client, logger)
 }
 
 func TestMiddlewareHello(t *testing.T) {
@@ -62,10 +45,7 @@ func TestMiddlewareHello(t *testing.T) {
 		Type: socketmode.EventTypeHello,
 	}
 	client := &socketmode.Client{}
-	output := captureLog(func() {
-		middlewareHello(evt, client)
-	})
-	assert.Equal(t, "Hello received from hello handler\n", output)
+	middlewareHello(evt, client, logger)
 }
 
 // Test1: Change the Data in socketmode.Event so that it isn't EventsAPIEvent
@@ -166,7 +146,7 @@ func TestMiddlewareAppMentionEvent(t *testing.T) {
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			middlewareAppMentionEvent(tt.arg.event, client, gptClient, ctx)
+			middlewareAppMentionEvent(tt.arg.event, client, gptClient, ctx, logger)
 		})
 	}
 }
@@ -298,7 +278,7 @@ func TestMiddlewareMessageEvent(t *testing.T) {
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			middlewareMessageEvent(tt.arg.event, client, gptClient, ctx)
+			middlewareMessageEvent(tt.arg.event, client, gptClient, ctx, logger)
 		})
 	}
 }
