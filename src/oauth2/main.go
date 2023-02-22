@@ -1,14 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 )
@@ -73,72 +74,59 @@ func fetch(w http.ResponseWriter, r *http.Request) {
 
 }
 
-/*doc, err := goquery.NewDocumentFromResponse(resp)
-if err != nil {
-	log.Fatal(err)
-}
-doc.
-if val, ok := doc.Find(`head meta[name="csrf-token-value"]`).Attr("content"); ok {
-	csrfToken = val
-}*/
-
-/*func main() {
-	http.HandleFunc("/", fetch)
-	http.ListenAndServe(":8080", nil)
-}*/
-
 func main() {
 	// https://developers.google.com/identity/protocols/oauth2
 	conf := &oauth2.Config{
-		ClientID:     "1075913669393-a35h2pn996rdrblbfc07a5d4a6vmo82g.apps.googleusercontent.com",
-		ClientSecret: "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",
+		ClientID:     "1075913669393-qhnfn93sgoibq7d5l09o131btkgu3sqo.apps.googleusercontent.com",
+		ClientSecret: "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",
 		Endpoint:     google.Endpoint,
-		RedirectURL:  "https://chat.openai.com/auth/login",
+		RedirectURL:  "https://chat.openai.com/chat",
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
 			"https://www.googleapis.com/auth/userinfo.profile",
 		},
 	}
-	// Start the authorization flow
-	url := conf.AuthCodeURL("state", oauth2.AccessTypeOffline)
-	fmt.Printf("Go to the following link in your browser: %v\n", url)
+	// Get the authorization url
+	uri := conf.AuthCodeURL("state")
 
-	// Handle the callback request
-	http.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) {
-		code := r.URL.Query().Get("code")
-		token, err := conf.Exchange(context.Background(), code)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		fmt.Println("Access token: ", token.AccessToken)
-		fmt.Println("Refresh token: ", token.RefreshToken)
-		fmt.Println("Type: ", token.TokenType)
-		fmt.Println("Expiration: ", token.Expiry)
+	// Print the auth url
+	fmt.Printf("Visit the URL for the auth dialog: %v\n", uri)
 
-		// get the user's information
-		httpClient := &http.Client{}
-		access := strings.Join([]string{"Bearer", token.AccessToken}, " ")
-		req, _ := http.NewRequest("GET", "https://api.openai.com/v1/users/me", nil)
-		req.Header.Set("Authorization", access)
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		fmt.Println("made it")
+	// Read the authorization code from the command line input
+	fmt.Print("Enter the authorization code: ")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	link := strings.TrimSpace(scanner.Text())
+	parsed, err := url.Parse(link)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	code := parsed.Query().Get("code")
+	if code == "" {
+		fmt.Println("Authorization code not found in URI")
+		return
+	}
 
-		// parse the response
-		fmt.Println("Content length: ", resp.ContentLength)
-		fmt.Println("Status: ", resp.Status)
-		fmt.Println("Status Code: ", resp.StatusCode)
-		fmt.Println("Header", resp.Header)
-		fmt.Println("Body: ")
-		if resp.StatusCode == http.StatusOK {
-			bodyBytes, _ := io.ReadAll(resp.Body)
-			fmt.Println(string(bodyBytes))
-		}
-	})
+	ctx := context.Background()
+	// Exchange the auth code for an access token
+	token, err := conf.Exchange(ctx, code)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-	http.ListenAndServe(":8080", nil)
+	// use the access token to make protected resources on the site
+	client := conf.Client(ctx, token)
+	client.Jar = NewJar()
+	req, err := http.NewRequest("GET", "https://chat.openai.com/chat", nil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//
+	fmt.Println(resp)
 
 }
