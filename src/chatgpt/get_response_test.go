@@ -1,54 +1,150 @@
 package chatgpt
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
+	"errors"
 	"github.com/PullRequestInc/go-gpt3"
-	fakes "github.com/PullRequestInc/go-gpt3/go-gpt3fakes"
 	"github.com/stretchr/testify/assert"
-	"io"
-	"net/http"
+	"github.com/stretchr/testify/mock"
 	"testing"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 net/http.RoundTripper
+type MockClient struct {
+	mock.Mock
+}
 
-func fakeHttpClient() (*fakes.FakeRoundTripper, *http.Client) {
-	rt := &fakes.FakeRoundTripper{}
+func (c *MockClient) Engines(ctx context.Context) (*gpt3.EnginesResponse, error) {
+	args := c.Called(ctx)
+	return args.Get(0).(*gpt3.EnginesResponse), args.Error(1)
+}
 
-	return rt, &http.Client{
-		Transport: rt,
-	}
+func (c *MockClient) Engine(ctx context.Context, engine string) (*gpt3.EngineObject, error) {
+	args := c.Called(ctx)
+	return args.Get(0).(*gpt3.EngineObject), args.Error(1)
+}
+
+func (c *MockClient) Completion(ctx context.Context, request gpt3.CompletionRequest) (*gpt3.CompletionResponse, error) {
+	args := c.Called(ctx, request)
+	return args.Get(0).(*gpt3.CompletionResponse), args.Error(1)
+}
+
+func (c *MockClient) CompletionStream(ctx context.Context, request gpt3.CompletionRequest, onData func(*gpt3.CompletionResponse)) error {
+	args := c.Called(ctx, request, onData)
+	return args.Error(0)
+}
+
+func (c *MockClient) CompletionWithEngine(ctx context.Context, engine string, request gpt3.CompletionRequest) (*gpt3.CompletionResponse, error) {
+	args := c.Called(ctx, engine, request)
+	return args.Get(0).(*gpt3.CompletionResponse), args.Error(1)
+}
+
+func (c *MockClient) CompletionStreamWithEngine(ctx context.Context, engine string, request gpt3.CompletionRequest, onData func(*gpt3.CompletionResponse)) error {
+	args := c.Called(ctx, engine, request, onData)
+	return args.Error(0)
+}
+
+func (c *MockClient) Edits(ctx context.Context, request gpt3.EditsRequest) (*gpt3.EditsResponse, error) {
+	args := c.Called(ctx, request)
+	return args.Get(0).(*gpt3.EditsResponse), args.Error(1)
+}
+
+func (c *MockClient) Search(ctx context.Context, request gpt3.SearchRequest) (*gpt3.SearchResponse, error) {
+	args := c.Called(ctx, request)
+	return args.Get(0).(*gpt3.SearchResponse), args.Error(1)
+}
+
+func (c *MockClient) SearchWithEngine(ctx context.Context, engine string, request gpt3.SearchRequest) (*gpt3.SearchResponse, error) {
+	args := c.Called(ctx, engine, request)
+	return args.Get(0).(*gpt3.SearchResponse), args.Error(1)
+}
+
+func (c *MockClient) Embeddings(ctx context.Context, request gpt3.EmbeddingsRequest) (*gpt3.EmbeddingsResponse, error) {
+	args := c.Called(ctx, request)
+	return args.Get(0).(*gpt3.EmbeddingsResponse), args.Error(1)
 }
 
 func TestGetStringResponse(t *testing.T) {
+	mockClient := MockClient{}
 	ctx := context.Background()
-	rt, httpClient := fakeHttpClient()
-
-	client := gpt3.NewClient("test-key", gpt3.WithHTTPClient(httpClient))
-	completionResponse := &gpt3.CompletionResponse{
-		ID:      "ABC",
-		Object:  "list",
-		Created: 123456789,
-		Model:   gpt3.TextDavinci003Engine,
-		Choices: []gpt3.CompletionResponseChoice{
-			gpt3.CompletionResponseChoice{
-				Text:         "why?",
-				FinishReason: "stop",
+	// define test cases
+	testCases := []struct {
+		name        string
+		question    string
+		expected    gpt3.CompletionResponse
+		expectedErr error
+	}{
+		{
+			name:     "returns response for valid question",
+			question: "What is the meaning of life?",
+			expected: gpt3.CompletionResponse{
+				Choices: []gpt3.CompletionResponseChoice{
+					{Text: "42"},
+				},
 			},
+			expectedErr: nil,
+		},
+		{
+			name:     "returns error for invalid question",
+			question: "",
+			expected: gpt3.CompletionResponse{
+				Choices: []gpt3.CompletionResponseChoice{
+					{Text: ""},
+				},
+			},
+			expectedErr: ErrorEmptyPrompt,
+		},
+		{
+			name:     "simulates an error from the api call",
+			question: "This Forces Fake Error",
+			expected: gpt3.CompletionResponse{
+				Choices: []gpt3.CompletionResponseChoice{
+					{Text: ""},
+				},
+			},
+			expectedErr: errors.New("Simulated err"),
 		},
 	}
-	data, err := json.Marshal(completionResponse)
-	assert.NoError(t, err)
-	mockResponse := &http.Response{
-		StatusCode: 200,
-		Body:       io.NopCloser(bytes.NewBuffer(data)),
-	}
-	rt.RoundTripReturns(mockResponse, nil)
 
-	text, err := GetStringResponse(client, ctx, "what?")
-	fmt.Println(text)
-	fmt.Println(err)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// setup our mock client to return a response or error based on the test
+			if tc.expectedErr == nil {
+				mockClient.On("CompletionWithEngine", ctx, gpt3.TextDavinci003Engine, gpt3.CompletionRequest{
+					Prompt:      []string{tc.question},
+					MaxTokens:   gpt3.IntPtr(3000),
+					Temperature: gpt3.Float32Ptr(0),
+				}).Return(&tc.expected, nil)
+			} else if tc.question == "" {
+				mockClient.On("CompletionWithEngine", ctx, gpt3.TextDavinci003Engine, gpt3.CompletionRequest{
+					Prompt:      []string{tc.question},
+					MaxTokens:   gpt3.IntPtr(3000),
+					Temperature: gpt3.Float32Ptr(0),
+				}).Return(&tc.expected, tc.expectedErr)
+			} else if tc.question == "This Forces Fake Error" {
+				mockClient.On("CompletionWithEngine", ctx, gpt3.TextDavinci003Engine, gpt3.CompletionRequest{
+					Prompt:      []string{tc.question},
+					MaxTokens:   gpt3.IntPtr(3000),
+					Temperature: gpt3.Float32Ptr(0),
+				}).Return(&tc.expected, tc.expectedErr)
+			}
+
+			response, err := GetStringResponse(&mockClient, ctx, tc.question)
+			assert.Equal(t, tc.expected.Choices[0].Text, response)
+			if tc.expectedErr == nil {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.expectedErr.Error())
+			}
+
+			// assert that the mock client's CompletionWithEngine method was called with the expected arguments
+			if tc.question != "" {
+				mockClient.AssertCalled(t, "CompletionWithEngine", ctx, gpt3.TextDavinci003Engine, gpt3.CompletionRequest{
+					Prompt:      []string{tc.question},
+					MaxTokens:   gpt3.IntPtr(3000),
+					Temperature: gpt3.Float32Ptr(0),
+				})
+			}
+
+		})
+	}
 }
