@@ -3,7 +3,7 @@ package gptslack
 
 import (
 	"context"
-	"github.com/PullRequestInc/go-gpt3"
+	gogpt "github.com/sashabaranov/go-gpt3"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
@@ -11,7 +11,7 @@ import (
 )
 
 // EventHandler handles slack events
-func EventHandler(appToken string, botToken string, gptClient gpt3.Client, ctx context.Context, log *zap.SugaredLogger) error {
+func EventHandler(appToken string, botToken string, gptClient *gogpt.Client, ctx context.Context, log *zap.SugaredLogger) error {
 
 	desugared := zap.NewStdLog(log.Desugar())
 	api := slack.New(
@@ -25,6 +25,8 @@ func EventHandler(appToken string, botToken string, gptClient gpt3.Client, ctx c
 		socketmode.OptionDebug(true),
 		socketmode.OptionLog(desugared),
 	)
+	convo := NewConversation()
+
 	socketmodeHandler := socketmode.NewSocketmodeHandler(client)
 	// should be a primary middleware handler, and these handle more granular events
 	socketmodeHandler.Handle(socketmode.EventTypeConnecting, func(evt *socketmode.Event, client *socketmode.Client) {
@@ -40,10 +42,33 @@ func EventHandler(appToken string, botToken string, gptClient gpt3.Client, ctx c
 		middlewareHello(evt, client, desugared)
 	})
 	socketmodeHandler.HandleEvents(slackevents.AppMention, func(evt *socketmode.Event, client *socketmode.Client) {
-		middlewareAppMentionEvent(evt, client, gptClient, ctx, desugared)
+		middlewareAppMentionEvent(evt, client, gptClient, ctx, desugared, convo)
 	})
 	socketmodeHandler.HandleEvents(slackevents.Message, func(evt *socketmode.Event, client *socketmode.Client) {
-		middlewareMessageEvent(evt, client, gptClient, ctx, desugared)
+		middlewareMessageEvent(evt, client, gptClient, ctx, desugared, convo)
 	})
 	return socketmodeHandler.RunEventLoop()
+}
+
+type conversation map[string][]string
+
+func NewConversation() conversation {
+	convo := make(map[string][]string)
+	return convo
+}
+
+// handles text for given user + channel combo
+func (c conversation) UpdateConversation(userChannel, chatText string) {
+	// new userChannel combo
+	if _, ok := c[userChannel]; !ok {
+		c[userChannel] = append(c[userChannel], chatText)
+		return
+	}
+	// this is around the maximum chat buffer chatgpt API can handle given 7000 tokens
+	if len(c[userChannel]) < 8 {
+		c[userChannel] = append(c[userChannel], chatText)
+	} else {
+		c[userChannel] = c[userChannel][1:]
+		c[userChannel] = append(c[userChannel], chatText)
+	}
 }

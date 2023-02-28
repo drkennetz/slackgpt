@@ -3,24 +3,24 @@ package chatgpt
 import (
 	"context"
 	"errors"
-	"github.com/PullRequestInc/go-gpt3"
+	gogpt "github.com/sashabaranov/go-gpt3"
 	"strings"
 )
 
 var ErrorEmptyPrompt error = errors.New("Error empty prompt")
 
-func GetStringResponse(client gpt3.Client, ctx context.Context, question string) (string, error) {
-	if question == "" {
+func GetStringResponse(client *gogpt.Client, ctx context.Context, chat []string) (string, error) {
+	if len(chat) == 0 {
 		return "", ErrorEmptyPrompt
 	}
 
-	prompt := []string{question}
-	req := gpt3.CompletionRequest{
-		Prompt:      prompt,
-		MaxTokens:   gpt3.IntPtr(3000),
-		Temperature: gpt3.Float32Ptr(0),
+	req := gogpt.CompletionRequest{
+		Model:       gogpt.GPT3TextDavinci003,
+		Prompt:      strings.Join(chat, " "),
+		MaxTokens:   2000,
+		Temperature: 0,
 	}
-	resp, err := client.CompletionWithEngine(ctx, gpt3.TextDavinci003Engine, req)
+	resp, err := client.CreateCompletion(ctx, req)
 	if err != nil {
 		return "", err
 	}

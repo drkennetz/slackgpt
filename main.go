@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/PullRequestInc/go-gpt3"
 	"github.com/alexflint/go-arg"
+	gogpt "github.com/sashabaranov/go-gpt3"
 	configs "go-slack-chat-gpt3/config"
 	gptslack "go-slack-chat-gpt3/src/slack"
 	"go.uber.org/automaxprocs/maxprocs"
@@ -69,7 +69,7 @@ func run(config, cfgType string, log *zap.SugaredLogger) error {
 	ctx := context.Background()
 
 	log.Infow("startup", "status", "gpt3 client started")
-	client := gpt3.NewClient(cfg.ChatGPTKey)
+	client := gogpt.NewClient(cfg.ChatGPTKey)
 
 	// make a channel to listen for an interrupt or term signal from the os
 	// use a buffered channel because the signal package requires it
