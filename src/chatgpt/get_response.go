@@ -7,9 +7,32 @@ import (
 	"strings"
 )
 
+// GPTClient implements CreateCompletion from gogpt.Client for testing and future methods
+type GPTClient interface {
+	CreateCompletion(ctx context.Context, req gogpt.CompletionRequest) (response gogpt.CompletionResponse, err error)
+}
+
+// ErrorEmptyPrompt implements an Error raised by passing an empty prompt
 var ErrorEmptyPrompt error = errors.New("Error empty prompt")
 
-func GetStringResponse(client *gogpt.Client, ctx context.Context, chat []string) (string, error) {
+// GetStringResponse sends a completion request to the GPT-3 API to generate a response
+// for a given conversation using the specified GPT-3 model. The function takes in a GPT-3
+// client, a context, and a slice of strings representing the conversation.
+//
+// If the length of the conversation slice is 0, an error called ErrorEmptyPrompt is returned.
+//
+// The function returns the generated response text from the GPT-3 API as a string, with any leading
+// or trailing spaces removed using strings.TrimSpace().
+//
+// Parameters:
+// - client: a GPT-3 client object used to make API requests
+// - ctx: a context object used to handle timeouts and cancellations
+// - chat: a slice of strings representing the conversation
+//
+// Returns:
+// - a string containing the generated response from the GPT-3 API
+// - an error, if any
+func GetStringResponse(client GPTClient, ctx context.Context, chat []string) (string, error) {
 	if len(chat) == 0 {
 		return "", ErrorEmptyPrompt
 	}
