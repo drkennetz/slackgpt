@@ -1,4 +1,4 @@
-package gptslack
+package slackhandler
 
 import (
 	"context"
@@ -12,18 +12,7 @@ import (
 )
 
 // TODO: implement middleware wrapper that handles everything through inner event data
-// TODO: think of data structure that will handle:
-//
-//	base question from thread, answer from bot, question from user, answer from bot, question from user, answer from bot
-//	this should store the last 4 conversation items (q+a) (roughly)
-//	in case another user interleaves a question in while bot is responding
-//	bot should be able to keep track of separate conversations even within a thread
-//	start with dms because only 1 user
-//	might use map[threadid][userid] = type struct conversation { chat []string }
-//	func (c *conversation) Update(question, answer string) {
-//	  if len(c.chat) < 7 { c.chat = append(c.chat, question); c.chat = append(c.chat, answer); }
-//	  else { c.chat = c.chat[2:]; c.chat = append(c.chat, question); c.chat = append(c.chat, answer); }
-//	}
+
 func middlewareConnecting(evt *socketmode.Event, client *socketmode.Client, logger *log.Logger) {
 	logger.Println("Connecting")
 }

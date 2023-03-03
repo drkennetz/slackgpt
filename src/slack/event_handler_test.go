@@ -1,23 +1,15 @@
-package gptslack
+package slackhandler
 
 import (
 	"context"
-	"github.com/PullRequestInc/go-gpt3"
-	fakes "github.com/PullRequestInc/go-gpt3/go-gpt3fakes"
+	"fmt"
+	gogpt "github.com/sashabaranov/go-gpt3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"net/http"
 	"testing"
 )
-
-func fakeHttpClient() (*fakes.FakeRoundTripper, *http.Client) {
-	rt := &fakes.FakeRoundTripper{}
-	return rt, &http.Client{
-		Transport: rt,
-	}
-}
 
 func initLogger(service string) (*zap.SugaredLogger, error) {
 	config := zap.NewProductionConfig()
@@ -40,8 +32,21 @@ func TestEventHandlerNoHandles(t *testing.T) {
 	appToken := "xapp-123"
 	botTok := "xoxb-test"
 	ctx := context.Background()
-	_, httpClient := fakeHttpClient()
-	client := gpt3.NewClient("test-key", gpt3.WithHTTPClient(httpClient))
+	client := gogpt.NewClient("test-token")
 	err = EventHandler(appToken, botTok, client, ctx, logger)
 	require.ErrorContains(t, err, "invalid_auth")
+}
+
+func TestConversation_UpdateConversation(t *testing.T) {
+	convo := newConversation()
+	userChannel := "user"
+	for i := 0; i < 10; i++ {
+		tmp := fmt.Sprintf("%s%v", userChannel, i)
+		convo.UpdateConversation(userChannel, tmp)
+		if i < 8 {
+			assert.Equal(t, convo[userChannel][0], "user0")
+		} else {
+			assert.Equal(t, convo[userChannel][0], fmt.Sprintf("%s%v", "user", i%7))
+		}
+	}
 }

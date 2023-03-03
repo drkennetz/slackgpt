@@ -1,10 +1,10 @@
-package gptslack
+package slackhandler
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/PullRequestInc/go-gpt3"
+	gogpt "github.com/sashabaranov/go-gpt3"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
@@ -141,12 +141,12 @@ func TestMiddlewareAppMentionEvent(t *testing.T) {
 
 	slackClient := slack.New("test")
 	client := socketmode.New(slackClient)
-	_, httpClient := fakeHttpClient()
-	gptClient := gpt3.NewClient("test-key", gpt3.WithHTTPClient(httpClient))
+	gptClient := gogpt.NewClient("test")
+	convo := newConversation()
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			middlewareAppMentionEvent(tt.arg.event, client, gptClient, ctx, logger)
+			middlewareAppMentionEvent(tt.arg.event, client, gptClient, ctx, logger, convo)
 		})
 	}
 }
@@ -273,12 +273,12 @@ func TestMiddlewareMessageEvent(t *testing.T) {
 
 	slackClient := slack.New("test")
 	client := socketmode.New(slackClient)
-	_, httpClient := fakeHttpClient()
-	gptClient := gpt3.NewClient("test-key", gpt3.WithHTTPClient(httpClient))
+	convo := newConversation()
+	gptClient := gogpt.NewClient("test")
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			middlewareMessageEvent(tt.arg.event, client, gptClient, ctx, logger)
+			middlewareMessageEvent(tt.arg.event, client, gptClient, ctx, logger, convo)
 		})
 	}
 }
