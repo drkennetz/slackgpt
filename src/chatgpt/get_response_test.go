@@ -1,54 +1,112 @@
 package chatgpt
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"github.com/PullRequestInc/go-gpt3"
-	fakes "github.com/PullRequestInc/go-gpt3/go-gpt3fakes"
+	"errors"
+	gogpt "github.com/sashabaranov/go-gpt3"
 	"github.com/stretchr/testify/assert"
-	"io"
-	"net/http"
+	"github.com/stretchr/testify/mock"
 	"testing"
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 net/http.RoundTripper
+type MockClient struct {
+	mock.Mock
+}
 
-func fakeHttpClient() (*fakes.FakeRoundTripper, *http.Client) {
-	rt := &fakes.FakeRoundTripper{}
-
-	return rt, &http.Client{
-		Transport: rt,
-	}
+func (c *MockClient) CreateCompletion(ctx context.Context, req gogpt.CompletionRequest) (gogpt.CompletionResponse, error) {
+	args := c.Called(ctx, req)
+	return args.Get(0).(gogpt.CompletionResponse), args.Error(1)
 }
 
 func TestGetStringResponse(t *testing.T) {
+	mockClient := &MockClient{}
 	ctx := context.Background()
-	rt, httpClient := fakeHttpClient()
-
-	client := gpt3.NewClient("test-key", gpt3.WithHTTPClient(httpClient))
-	completionResponse := &gpt3.CompletionResponse{
-		ID:      "ABC",
-		Object:  "list",
-		Created: 123456789,
-		Model:   gpt3.TextDavinci003Engine,
-		Choices: []gpt3.CompletionResponseChoice{
-			gpt3.CompletionResponseChoice{
-				Text:         "why?",
-				FinishReason: "stop",
+	// define test cases
+	testCases := []struct {
+		name        string
+		question    string
+		expected    gogpt.CompletionResponse
+		expectedErr error
+	}{
+		{
+			name:     "returns response for valid question",
+			question: "What is the meaning of life?",
+			expected: gogpt.CompletionResponse{
+				Choices: []gogpt.CompletionChoice{
+					{Text: "42"},
+				},
 			},
+			expectedErr: nil,
+		},
+		{
+			name:     "returns error for invalid question",
+			question: "",
+			expected: gogpt.CompletionResponse{
+				Choices: []gogpt.CompletionChoice{
+					{Text: ""},
+				},
+			},
+			expectedErr: ErrorEmptyPrompt,
+		},
+		{
+			name:     "simulates an error from the api call",
+			question: "This Forces Fake Error",
+			expected: gogpt.CompletionResponse{
+				Choices: []gogpt.CompletionChoice{
+					{Text: ""},
+				},
+			},
+			expectedErr: errors.New("Simulated err"),
 		},
 	}
-	data, err := json.Marshal(completionResponse)
-	assert.NoError(t, err)
-	mockResponse := &http.Response{
-		StatusCode: 200,
-		Body:       io.NopCloser(bytes.NewBuffer(data)),
-	}
-	rt.RoundTripReturns(mockResponse, nil)
 
-	text, err := GetStringResponse(client, ctx, "what?")
-	fmt.Println(text)
-	fmt.Println(err)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// setup our mock client to return a response or error based on the test
+			if tc.expectedErr == nil {
+				mockClient.On("CreateCompletion", ctx, gogpt.CompletionRequest{
+					Model:       gogpt.GPT3TextDavinci003,
+					Prompt:      tc.question,
+					MaxTokens:   2000,
+					Temperature: 0,
+				}).Return(tc.expected, nil)
+			} else if tc.question == "" {
+				mockClient.On("CreateCompletion", ctx, gogpt.CompletionRequest{
+					Model:       gogpt.GPT3TextDavinci003,
+					Prompt:      tc.question,
+					MaxTokens:   2000,
+					Temperature: 0,
+				}).Return(tc.expected, tc.expectedErr)
+			} else if tc.question == "This Forces Fake Error" {
+				mockClient.On("CreateCompletion", ctx, gogpt.CompletionRequest{
+					Model:       gogpt.GPT3TextDavinci003,
+					Prompt:      tc.question,
+					MaxTokens:   2000,
+					Temperature: 0,
+				}).Return(tc.expected, tc.expectedErr)
+			}
+
+			response, err := GetStringResponse(mockClient, ctx, []string{tc.question})
+			if tc.question != "" {
+				assert.Equal(t, tc.expected.Choices[0].Text, response)
+				if tc.expectedErr != nil {
+					assert.EqualError(t, err, tc.expectedErr.Error())
+				}
+			} else {
+				_, err = GetStringResponse(mockClient, ctx, []string{})
+				assert.EqualError(t, err, tc.expectedErr.Error())
+			}
+
+			// assert that the mock client's CompletionWithEngine method was called with the expected arguments
+			if tc.question != "" {
+				mockClient.AssertCalled(t, "CreateCompletion", ctx, gogpt.CompletionRequest{
+					Model:       gogpt.GPT3TextDavinci003,
+					Prompt:      tc.question,
+					MaxTokens:   2000,
+					Temperature: 0,
+				})
+			}
+
+		})
+	}
 }
