@@ -49,29 +49,3 @@ func EventHandler(appToken string, botToken string, gptClient *gogpt.Client, ctx
 	})
 	return socketmodeHandler.RunEventLoop()
 }
-
-// conversation stores user+channel conversations for up to 4 q+a before cycling out
-type conversation map[string][]string
-
-// newConversation creates a new conversation
-func newConversation() conversation {
-	convo := make(map[string][]string)
-	return convo
-}
-
-// UpdateConversation stores records of 4 questions and answers for a given user channel combination
-// to feed into the chatgpt API to enable conversations
-func (c conversation) UpdateConversation(userChannel, chatText string) {
-	// new userChannel combo
-	if _, ok := c[userChannel]; !ok {
-		c[userChannel] = append(c[userChannel], chatText)
-		return
-	}
-	// this is around the maximum chat buffer chatgpt API can handle given 4096 tokens
-	if len(c[userChannel]) < 8 {
-		c[userChannel] = append(c[userChannel], chatText)
-	} else {
-		c[userChannel] = c[userChannel][1:]
-		c[userChannel] = append(c[userChannel], chatText)
-	}
-}

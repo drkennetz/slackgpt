@@ -2,7 +2,6 @@ package slackhandler
 
 import (
 	"context"
-	"fmt"
 	gogpt "github.com/sashabaranov/go-gpt3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -35,18 +34,4 @@ func TestEventHandlerNoHandles(t *testing.T) {
 	client := gogpt.NewClient("test-token")
 	err = EventHandler(appToken, botTok, client, ctx, logger)
 	require.ErrorContains(t, err, "invalid_auth")
-}
-
-func TestConversation_UpdateConversation(t *testing.T) {
-	convo := newConversation()
-	userChannel := "user"
-	for i := 0; i < 10; i++ {
-		tmp := fmt.Sprintf("%s%v", userChannel, i)
-		convo.UpdateConversation(userChannel, tmp)
-		if i < 8 {
-			assert.Equal(t, convo[userChannel][0], "user0")
-		} else {
-			assert.Equal(t, convo[userChannel][0], fmt.Sprintf("%s%v", "user", i%7))
-		}
-	}
 }

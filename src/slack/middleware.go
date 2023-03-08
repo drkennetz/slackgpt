@@ -32,7 +32,7 @@ func middlewareHello(evt *socketmode.Event, client *socketmode.Client, logger *l
 // we have to org this in such a way that this part does the chatGPT stuff
 // but it needs the tokens from the environment
 func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client,
-	gptClient *gogpt.Client, ctx context.Context, logger *log.Logger, convo conversation) {
+	gptClient *gogpt.Client, ctx context.Context, logger *log.Logger, convo *conversation) {
 	logger.Println("Hello from AppMention middleware")
 	eventsAPIEvent, ok := evt.Data.(slackevents.EventsAPIEvent)
 	if !ok {
@@ -50,7 +50,7 @@ func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client,
 
 	userChannel := ev.User + ev.Channel
 	convo.UpdateConversation(userChannel, ev.Text)
-	gpt3Resp, err := chatgpt.GetStringResponse(gptClient, ctx, convo[userChannel])
+	gpt3Resp, err := chatgpt.GetStringResponse(gptClient, ctx, convo.data[userChannel])
 	convo.UpdateConversation(userChannel, gpt3Resp)
 	if err != nil {
 		logger.Printf("Failed to get gpt3 response: %v\n", err)
@@ -63,7 +63,7 @@ func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client,
 	}
 }
 
-func middlewareMessageEvent(evt *socketmode.Event, client *socketmode.Client, gptClient *gogpt.Client, ctx context.Context, logger *log.Logger, convo conversation) {
+func middlewareMessageEvent(evt *socketmode.Event, client *socketmode.Client, gptClient *gogpt.Client, ctx context.Context, logger *log.Logger, convo *conversation) {
 	logger.Println("Hello from Message middleware")
 	eventsAPIEvent, ok := evt.Data.(slackevents.EventsAPIEvent)
 	// only handle non-bot-id-events
@@ -83,7 +83,7 @@ func middlewareMessageEvent(evt *socketmode.Event, client *socketmode.Client, gp
 	}
 	userChannel := ev.Username + ev.Channel
 	convo.UpdateConversation(userChannel, ev.Text)
-	gpt3Resp, err := chatgpt.GetStringResponse(gptClient, ctx, convo[userChannel])
+	gpt3Resp, err := chatgpt.GetStringResponse(gptClient, ctx, convo.data[userChannel])
 	if err != nil {
 		logger.Printf("Failed to get gpt3 response: %v\n", err)
 		gpt3Resp = "I'm having some trouble communicating with our servers (my brain). Please try again in a little bit and hopefully the fuzz clears up."
