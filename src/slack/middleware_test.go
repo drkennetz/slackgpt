@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	gogpt "github.com/sashabaranov/go-gpt3"
+	"github.com/sashabaranov/go-openai"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
@@ -141,7 +141,7 @@ func TestMiddlewareAppMentionEvent(t *testing.T) {
 
 	slackClient := slack.New("test")
 	client := socketmode.New(slackClient)
-	gptClient := gogpt.NewClient("test")
+	gptClient := openai.NewClient("test")
 	convo := newConversation()
 	ctx := context.Background()
 	for _, tt := range tests {
@@ -274,7 +274,7 @@ func TestMiddlewareMessageEvent(t *testing.T) {
 	slackClient := slack.New("test")
 	client := socketmode.New(slackClient)
 	convo := newConversation()
-	gptClient := gogpt.NewClient("test")
+	gptClient := openai.NewClient("test")
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
