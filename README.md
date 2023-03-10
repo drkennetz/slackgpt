@@ -14,7 +14,7 @@
    </a>
 </p>
 
-slackgot is a simple slack bot server which handles DM's and app mention events, sending the event to chat-gpt and responding to the channel with chat-gpt's response.
+slackgpt is a simple slack bot server which handles DM's and app mention events, sending the event to chat-gpt and responding to the channel with chat-gpt's response.
 
 slackgpt can respond to both direct messages, or threads in a channel. It can handle multiple conversations concurrently, enabling parallel conversations to happen simultaneously in channels it has been added to.
 
