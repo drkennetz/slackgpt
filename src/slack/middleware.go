@@ -2,11 +2,11 @@ package slackhandler
 
 import (
 	"context"
-	gogpt "github.com/sashabaranov/go-gpt3"
+	"github.com/drkennetz/slackgpt/src/chatgpt"
+	"github.com/sashabaranov/go-openai"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
-	"go-slack-chat-gpt3/src/chatgpt"
 	"log"
 	"strings"
 )
@@ -32,7 +32,7 @@ func middlewareHello(evt *socketmode.Event, client *socketmode.Client, logger *l
 // we have to org this in such a way that this part does the chatGPT stuff
 // but it needs the tokens from the environment
 func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client,
-	gptClient *gogpt.Client, ctx context.Context, logger *log.Logger, convo *conversation) {
+	gptClient *openai.Client, ctx context.Context, logger *log.Logger, convo *conversation) {
 	logger.Println("Hello from AppMention middleware")
 	eventsAPIEvent, ok := evt.Data.(slackevents.EventsAPIEvent)
 	if !ok {
@@ -47,23 +47,31 @@ func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client,
 		return
 	}
 	logger.Printf("we have been mentioned in %v\n", ev.Channel)
-
-	userChannel := ev.User + ev.Channel
-	convo.UpdateConversation(userChannel, ev.Text)
-	gpt3Resp, err := chatgpt.GetStringResponse(gptClient, ctx, convo.data[userChannel])
-	convo.UpdateConversation(userChannel, gpt3Resp)
+	logger.Println(ev)
+	if ev.ThreadTimeStamp == "" {
+		ev.ThreadTimeStamp = ev.TimeStamp
+	}
+	// found a unique way to identify a thread
+	timestampUserChannel := ev.ThreadTimeStamp + ev.User + ev.Channel
+	log.Printf("timestamp: %v\n", ev.TimeStamp)
+	log.Printf("thread_timestamp: %v\n", ev.ThreadTimeStamp)
+	convo.UpdateConversation(timestampUserChannel, ev.Text)
+	gpt3Resp, err := chatgpt.GetStringResponse(gptClient, ctx, convo.data[timestampUserChannel])
+	convo.UpdateConversation(timestampUserChannel, gpt3Resp)
 	if err != nil {
 		logger.Printf("Failed to get gpt3 response: %v\n", err)
 		gpt3Resp = "I'm having some trouble communicating with our servers (my brain). Please try again in a little bit and hopefully the fuzz clears up."
 	}
-	_, _, err = client.Client.PostMessage(ev.Channel, slack.MsgOptionText(strings.Join([]string{"```", gpt3Resp, "```"}, ""), false))
+	_, _, err = client.Client.PostMessage(ev.Channel,
+		slack.MsgOptionText(strings.Join([]string{"```", gpt3Resp, "```"}, ""), false),
+		slack.MsgOptionTS(ev.ThreadTimeStamp))
 	if err != nil {
 		logger.Printf("failed posting message: %v", err)
 		return
 	}
 }
 
-func middlewareMessageEvent(evt *socketmode.Event, client *socketmode.Client, gptClient *gogpt.Client, ctx context.Context, logger *log.Logger, convo *conversation) {
+func middlewareMessageEvent(evt *socketmode.Event, client *socketmode.Client, gptClient *openai.Client, ctx context.Context, logger *log.Logger, convo *conversation) {
 	logger.Println("Hello from Message middleware")
 	eventsAPIEvent, ok := evt.Data.(slackevents.EventsAPIEvent)
 	// only handle non-bot-id-events
@@ -74,6 +82,7 @@ func middlewareMessageEvent(evt *socketmode.Event, client *socketmode.Client, gp
 
 	client.Ack(*evt.Request)
 	ev, ok := eventsAPIEvent.InnerEvent.Data.(*slackevents.MessageEvent)
+	logger.Println(ev)
 	if !ok {
 		logger.Printf("Ignored %+v\n", evt)
 		return
@@ -89,7 +98,6 @@ func middlewareMessageEvent(evt *socketmode.Event, client *socketmode.Client, gp
 		gpt3Resp = "I'm having some trouble communicating with our servers (my brain). Please try again in a little bit and hopefully the fuzz clears up."
 	}
 	convo.UpdateConversation(userChannel, gpt3Resp)
-	logger.Println(convo)
 	_, _, err = client.Client.PostMessage(ev.Channel, slack.MsgOptionText(strings.Join([]string{"```", gpt3Resp, "```"}, ""), false))
 	if err != nil {
 		logger.Printf("failed posting message: %v\n", err)

@@ -1,5 +1,5 @@
 # Setup
-In order to run the slack-chat-gpt app, you need a chat-gpt api key, a slack bot with correct OAuth permissions and a bot token, and a slack app token.
+In order to run the slackgpt app, you need a chat-gpt api key, a slack bot with correct OAuth permissions and a bot token, and a slack app token.
 While the chat-gpt api key is fairly straightforward, the slack bot is a bit more challenging so
 a walk-through will be included below.
 

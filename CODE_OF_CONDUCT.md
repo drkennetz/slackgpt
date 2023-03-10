@@ -57,4 +57,4 @@ If the Project determines that a participant has engaged in behavior that violat
 ## Modifications:
 The Project reserves the right to modify this Code of Conduct at any time, and will make such modifications available to all participants.
 
-**Thank you for participating in the go-slack-chat-gpt3 project, and for helping to make it a welcoming and inclusive community for everyone.**
+**Thank you for participating in the slackgpt project, and for helping to make it a welcoming and inclusive community for everyone.**

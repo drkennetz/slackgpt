@@ -3,49 +3,50 @@ package slackhandler
 
 import (
 	"context"
-	gogpt "github.com/sashabaranov/go-gpt3"
+	"github.com/sashabaranov/go-openai"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
-	"go.uber.org/zap"
+	"log"
 )
 
-// EventHandler handles slack events
-func EventHandler(appToken string, botToken string, gptClient *gogpt.Client, ctx context.Context, log *zap.SugaredLogger) error {
+type EventHandlerArgs struct {
+	Logger           *log.Logger
+	SlackClient      *slack.Client
+	SocketModeClient *socketmode.Client
+	GPTClient        *openai.Client
+	Context          context.Context
+}
 
-	desugared := zap.NewStdLog(log.Desugar())
-	api := slack.New(
-		botToken,
-		slack.OptionDebug(true),
-		slack.OptionLog(desugared),
-		slack.OptionAppLevelToken(appToken),
-	)
-	client := socketmode.New(
-		api,
-		socketmode.OptionDebug(true),
-		socketmode.OptionLog(desugared),
-	)
+// NewSocketmodeHandler returns a new instance of a socketmode.SocketmodeHandler
+func (e *EventHandlerArgs) NewSocketmodeHandler() *socketmode.SocketmodeHandler {
+	return socketmode.NewSocketmodeHandler(e.SocketModeClient)
+}
+
+// EventHandler handles slack events
+func EventHandler(args EventHandlerArgs, handler *socketmode.SocketmodeHandler) error {
+
 	convo := newConversation()
 
-	socketmodeHandler := socketmode.NewSocketmodeHandler(client)
 	// should be a primary middleware handler, and these handle more granular events
-	socketmodeHandler.Handle(socketmode.EventTypeConnecting, func(evt *socketmode.Event, client *socketmode.Client) {
-		middlewareConnecting(evt, client, desugared)
+	handler.Handle(socketmode.EventTypeConnecting, func(evt *socketmode.Event, client *socketmode.Client) {
+		middlewareConnecting(evt, client, args.Logger)
 	})
-	socketmodeHandler.Handle(socketmode.EventTypeConnectionError, func(evt *socketmode.Event, client *socketmode.Client) {
-		middlewareConnectionError(evt, client, desugared)
+	handler.Handle(socketmode.EventTypeConnectionError, func(evt *socketmode.Event, client *socketmode.Client) {
+		middlewareConnectionError(evt, client, args.Logger)
 	})
-	socketmodeHandler.Handle(socketmode.EventTypeConnected, func(evt *socketmode.Event, client *socketmode.Client) {
-		middlewareConnected(evt, client, desugared)
+	handler.Handle(socketmode.EventTypeConnected, func(evt *socketmode.Event, client *socketmode.Client) {
+		middlewareConnected(evt, client, args.Logger)
 	})
-	socketmodeHandler.Handle(socketmode.EventTypeHello, func(evt *socketmode.Event, client *socketmode.Client) {
-		middlewareHello(evt, client, desugared)
+	handler.Handle(socketmode.EventTypeHello, func(evt *socketmode.Event, client *socketmode.Client) {
+		middlewareHello(evt, client, args.Logger)
 	})
-	socketmodeHandler.HandleEvents(slackevents.AppMention, func(evt *socketmode.Event, client *socketmode.Client) {
-		middlewareAppMentionEvent(evt, client, gptClient, ctx, desugared, convo)
+
+	handler.HandleEvents(slackevents.AppMention, func(evt *socketmode.Event, client *socketmode.Client) {
+		middlewareAppMentionEvent(evt, client, args.GPTClient, args.Context, args.Logger, convo)
 	})
-	socketmodeHandler.HandleEvents(slackevents.Message, func(evt *socketmode.Event, client *socketmode.Client) {
-		middlewareMessageEvent(evt, client, gptClient, ctx, desugared, convo)
+	handler.HandleEvents(slackevents.Message, func(evt *socketmode.Event, client *socketmode.Client) {
+		middlewareMessageEvent(evt, client, args.GPTClient, args.Context, args.Logger, convo)
 	})
-	return socketmodeHandler.RunEventLoop()
+	return handler.RunEventLoop()
 }

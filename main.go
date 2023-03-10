@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/alexflint/go-arg"
-	gogpt "github.com/sashabaranov/go-gpt3"
-	configs "go-slack-chat-gpt3/config"
-	gptslack "go-slack-chat-gpt3/src/slack"
+	configs "github.com/drkennetz/slackgpt/config"
+	slackgpt "github.com/drkennetz/slackgpt/src/slack"
+	"github.com/sashabaranov/go-openai"
+	"github.com/slack-go/slack"
+	"github.com/slack-go/slack/socketmode"
 	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -16,13 +18,16 @@ import (
 	"syscall"
 )
 
+const VERSION = 1.0
+
 type args struct {
 	Config string `arg:"required,-c,--config" help:"config file with slack app+bot tokens, chat-gpt API token"`
 	Type   string `arg:"-t, --type" default:"" help:"the config type [json, toml, yaml, hcl, ini, env, properties]; if not passed, inferred from file ext"`
+	Debug  bool   `arg:"--debug" help:"set debug mode for client logging"`
 }
 
 func (args) Version() string {
-	return "VERSION: development\n"
+	return fmt.Sprintf("VERSION: %v\n", VERSION)
 }
 
 func (args) Description() string {
@@ -30,7 +35,7 @@ func (args) Description() string {
 }
 
 func (args) Epilogue() string {
-	return "for more information, visit https://github.com/drkennetz/go-slack-chat-gpt3"
+	return "for more information, visit https://github.com/drkennetz/slackgpt"
 }
 
 func main() {
@@ -46,12 +51,12 @@ func main() {
 	arg.MustParse(&arguments)
 
 	log.Infow("startup", "version", arguments.Version())
-	if err := run(arguments.Config, arguments.Type, log); err != nil {
+	if err := run(arguments, log); err != nil {
 		os.Exit(1)
 	}
 }
 
-func run(config, cfgType string, log *zap.SugaredLogger) error {
+func run(arg args, log *zap.SugaredLogger) error {
 	// ========================
 	// GOMAXPROCS
 
@@ -61,16 +66,37 @@ func run(config, cfgType string, log *zap.SugaredLogger) error {
 		return fmt.Errorf("maxprocs: %w", err)
 	}
 	log.Infow("startup", "GOMAXPROCS", runtime.GOMAXPROCS(0))
-	cfgParts, err := configs.ParseConfigFromPath(config, cfgType)
+	cfgParts, err := configs.ParseConfigFromPath(arg.Config, arg.Type)
 	cfg, err := configs.LoadConfig(cfgParts)
 	if err != nil {
 		return err
 	}
 	ctx := context.Background()
 
+	// initiating clients
+	simpleLogger := zap.NewStdLog(log.Desugar())
+	gptClient := openai.NewClient(cfg.ChatGPTKey)
 	log.Infow("startup", "status", "gpt3 client started")
-	client := gogpt.NewClient(cfg.ChatGPTKey)
-
+	slackClient := slack.New(
+		cfg.SlackBotToken,
+		slack.OptionDebug(arg.Debug),
+		slack.OptionAppLevelToken(cfg.SlackAppToken),
+		slack.OptionLog(simpleLogger),
+	)
+	log.Infow("startup", "status", "slack client started")
+	socketmodeClient := socketmode.New(
+		slackClient,
+		socketmode.OptionDebug(arg.Debug),
+		socketmode.OptionLog(simpleLogger),
+	)
+	log.Infow("startup", "status", "socketmode client started")
+	eventHandlerArgs := slackgpt.EventHandlerArgs{
+		Logger:           simpleLogger,
+		SlackClient:      slackClient,
+		SocketModeClient: socketmodeClient,
+		GPTClient:        gptClient,
+		Context:          ctx,
+	}
 	// make a channel to listen for an interrupt or term signal from the os
 	// use a buffered channel because the signal package requires it
 	shutdown := make(chan os.Signal, 1)
@@ -81,12 +107,12 @@ func run(config, cfgType string, log *zap.SugaredLogger) error {
 	// goroutine will return before server shuts down.
 	// In the future, certain errors may trigger a shutdown, but not right now
 	handlerErrors := make(chan error, 1)
-
+	handler := eventHandlerArgs.NewSocketmodeHandler()
 	// Start the service listening for events
 	go func() {
 		log.Infow("startup", "status", "slack event handler started")
 		// refactor this to take in a struct
-		handlerErrors <- gptslack.EventHandler(cfg.SlackAppToken, cfg.SlackBotToken, client, ctx, log)
+		handlerErrors <- slackgpt.EventHandler(eventHandlerArgs, handler)
 	}()
 
 	// Blocking main and waiting for shutdown

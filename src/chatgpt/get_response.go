@@ -3,13 +3,13 @@ package chatgpt
 import (
 	"context"
 	"errors"
-	gogpt "github.com/sashabaranov/go-gpt3"
+	openai "github.com/sashabaranov/go-openai"
 	"strings"
 )
 
 // GPTClient implements CreateCompletion from gogpt.Client for testing and future methods
 type GPTClient interface {
-	CreateCompletion(ctx context.Context, req gogpt.CompletionRequest) (response gogpt.CompletionResponse, err error)
+	CreateCompletion(ctx context.Context, req openai.CompletionRequest) (response openai.CompletionResponse, err error)
 }
 
 // ErrorEmptyPrompt implements an Error raised by passing an empty prompt
@@ -37,8 +37,8 @@ func GetStringResponse(client GPTClient, ctx context.Context, chat []string) (st
 		return "", ErrorEmptyPrompt
 	}
 
-	req := gogpt.CompletionRequest{
-		Model:       gogpt.GPT3TextDavinci003,
+	req := openai.CompletionRequest{
+		Model:       openai.GPT3TextDavinci003,
 		Prompt:      strings.Join(chat, " "),
 		MaxTokens:   2000,
 		Temperature: 0,
