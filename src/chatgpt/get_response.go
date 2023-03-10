@@ -3,7 +3,7 @@ package chatgpt
 import (
 	"context"
 	"errors"
-	"github.com/sashabaranov/go-openai"
+	openai "github.com/sashabaranov/go-openai"
 	"strings"
 )
 

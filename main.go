@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/alexflint/go-arg"
+	configs "github.com/drkennetz/slackgpt/config"
+	slackgpt "github.com/drkennetz/slackgpt/src/slack"
 	"github.com/sashabaranov/go-openai"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/socketmode"
-	configs "go-slack-chat-gpt3/config"
-	gptslack "go-slack-chat-gpt3/src/slack"
 	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -18,6 +18,8 @@ import (
 	"syscall"
 )
 
+const VERSION = 1.0
+
 type args struct {
 	Config string `arg:"required,-c,--config" help:"config file with slack app+bot tokens, chat-gpt API token"`
 	Type   string `arg:"-t, --type" default:"" help:"the config type [json, toml, yaml, hcl, ini, env, properties]; if not passed, inferred from file ext"`
@@ -25,7 +27,7 @@ type args struct {
 }
 
 func (args) Version() string {
-	return "VERSION: development\n"
+	return fmt.Sprintf("VERSION: %v\n", VERSION)
 }
 
 func (args) Description() string {
@@ -33,7 +35,7 @@ func (args) Description() string {
 }
 
 func (args) Epilogue() string {
-	return "for more information, visit https://github.com/drkennetz/go-slack-chat-gpt3"
+	return "for more information, visit https://github.com/drkennetz/slackgpt"
 }
 
 func main() {
@@ -88,7 +90,7 @@ func run(arg args, log *zap.SugaredLogger) error {
 		socketmode.OptionLog(simpleLogger),
 	)
 	log.Infow("startup", "status", "socketmode client started")
-	eventHandlerArgs := gptslack.EventHandlerArgs{
+	eventHandlerArgs := slackgpt.EventHandlerArgs{
 		Logger:           simpleLogger,
 		SlackClient:      slackClient,
 		SocketModeClient: socketmodeClient,
@@ -110,7 +112,7 @@ func run(arg args, log *zap.SugaredLogger) error {
 	go func() {
 		log.Infow("startup", "status", "slack event handler started")
 		// refactor this to take in a struct
-		handlerErrors <- gptslack.EventHandler(eventHandlerArgs, handler)
+		handlerErrors <- slackgpt.EventHandler(eventHandlerArgs, handler)
 	}()
 
 	// Blocking main and waiting for shutdown
