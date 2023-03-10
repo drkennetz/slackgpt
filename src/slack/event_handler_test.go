@@ -2,6 +2,7 @@ package slackhandler
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/sashabaranov/go-openai"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
@@ -56,6 +57,7 @@ func TestEventHandlerArgs_NewSocketmodeHandler(t *testing.T) {
 		slack.OptionAppLevelToken(appToken),
 		slack.OptionLog(logger),
 	)
+
 	socketmodeClient := socketmode.New(
 		slackClient,
 		socketmode.OptionDebug(false),
@@ -71,6 +73,14 @@ func TestEventHandlerArgs_NewSocketmodeHandler(t *testing.T) {
 	handler := args.NewSocketmodeHandler()
 	assert.NotEmpty(t, handler)
 
+	type payload struct {
+		Text string `json:"text"`
+	}
+	x := payload{
+		Text: "we made it",
+	}
+	send, err := json.Marshal(x)
+	assert.NoError(t, err)
 	c := make(chan socketmode.Event)
 	e := make(chan error)
 	handler.Client.Events = c
@@ -79,6 +89,50 @@ func TestEventHandlerArgs_NewSocketmodeHandler(t *testing.T) {
 		defer close(e)
 		e <- EventHandler(args, handler)
 	}()
+	c <- socketmode.Event{
+		Type: socketmode.EventTypeConnectionError,
+	}
+	c <- socketmode.Event{
+		Type: socketmode.EventTypeConnected,
+	}
+	c <- socketmode.Event{
+		Type: socketmode.EventTypeHello,
+	}
+	c <- socketmode.Event{
+		Type: socketmode.EventTypeEventsAPI,
+		Data: slackevents.EventsAPIEvent{
+			Type: "event_callback",
+			InnerEvent: slackevents.EventsAPIInnerEvent{
+				Type: string(slackevents.AppMention),
+			},
+		},
+		Request: &socketmode.Request{
+			Type:           "test",
+			NumConnections: 1,
+			ConnectionInfo: socketmode.ConnectionInfo{"test-app"},
+			Reason:         "test",
+			EnvelopeID:     "1",
+			Payload:        send,
+		},
+	}
+	c <- socketmode.Event{
+		Type: socketmode.EventTypeEventsAPI,
+		Data: slackevents.EventsAPIEvent{
+			Type: "event_callback",
+			InnerEvent: slackevents.EventsAPIInnerEvent{
+				Type: string(slackevents.Message),
+			},
+		},
+		Request: &socketmode.Request{
+			Type:           "test",
+			NumConnections: 1,
+			ConnectionInfo: socketmode.ConnectionInfo{"test-app"},
+			Reason:         "test",
+			EnvelopeID:     "1",
+			Payload:        send,
+		},
+	}
+
 	errNew := <-e
 
 	assert.Error(t, errNew)
