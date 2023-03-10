@@ -4,4 +4,7 @@ test:
 coverage:
 	go tool cover -func=coverage.out
 
-.PHONY: test coverage
+build:
+	go build -o ./bin/slackgpt
+
+.PHONY: test coverage build

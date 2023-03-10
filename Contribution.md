@@ -1,6 +1,6 @@
-# Contributing to go-slack-chat-gpt3
+# Contributing to slackgpt
 
-We welcome contributions to go-slack-chat-gpt3! Whether it's fixing a bug, creating a new feature, or improving the documentation, every contribution helps make go-slack-chat-gpt3 better.
+We welcome contributions to slackgpt! Whether it's fixing a bug, creating a new feature, or improving the documentation, every contribution helps make slackgpt better.
 
 ## Types of Contributions
 
@@ -27,12 +27,12 @@ After your **Pull Request Successfully merged**, add your name to the Contributo
 
 <!-- ## Code of Conduct
 
-We expect all contributors to adhere to our [CODE OF CONDUCT](link). By contributing to go-slack-chat-gpt3, you agree to abide by its terms. -->
+We expect all contributors to adhere to our [CODE OF CONDUCT](link). By contributing to slackgpt, you agree to abide by its terms. -->
 
 ## License
 
-go-slack-chat-gpt3 is licensed under [Apache 2.0 License](LICENSE). By contributing to go-slack-chat-gpt3, you agree to license your contribution under the same license.
+slackgpt is licensed under [Apache 2.0 License](LICENSE). By contributing to slackgpt, you agree to license your contribution under the same license.
 
 ## Acknowledgments
 
-Thank you for considering a contribution to go-slack-chat-gpt3. We appreciate your time and effort!
+Thank you for considering a contribution to slackgpt. We appreciate your time and effort!

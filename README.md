@@ -1,16 +1,16 @@
 <h1 align="center">slackgpt</h1>
 <p align="center">
    <a href='#GoVersion'>
-      <img alt="GitHub go.mod Go version" src="https://img.shields.io/github/go-mod/go-version/drkennetz/go-slack-chat-gpt3">
+      <img alt="GitHub go.mod Go version" src="https://img.shields.io/github/go-mod/go-version/drkennetz/slackgpt">
    </a>
-    <a href="https://github.com/drkennetz/go-slack-chat-gpt3">
-        <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/drkennetz/go-slack-chat-gpt3/ci.yml">
+    <a href="https://github.com/drkennetz/slackgpt">
+        <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/drkennetz/slackgpt/ci.yml">
     </a>
-    <a href="https://codecov.io/github/drkennetz/go-slack-chat-gpt3" > 
-        <img src="https://codecov.io/github/drkennetz/go-slack-chat-gpt3/branch/main/graph/badge.svg?token=8IHKB8J1AN"/> 
+    <a href="https://codecov.io/github/drkennetz/slackgpt" > 
+        <img src="https://codecov.io/github/drkennetz/slackgpt/branch/main/graph/badge.svg?token=8IHKB8J1AN"/> 
     </a>
-    <a href="https://github.com/drkennetz/go-slack-chat-gpt3/issues">
-        <img src="https://img.shields.io/github/issues/drkennetz/go-slack-chat-gpt3" alt="Issues">
+    <a href="https://github.com/drkennetz/slackgpt/issues">
+        <img src="https://img.shields.io/github/issues/drkennetz/slackgpt" alt="Issues">
    </a>
 </p>
 
@@ -77,13 +77,17 @@ socketmode: 2023/02/01 14:53:19 socket_mode_managed_conn.go:258: Starting Socket
 ## DMS
 <details>
   <summary>Conversation in DM's</summary>
+
   ![DMS](./example/conversation.gif)
+
 </details>
 
 ## Threads
 <details>
   <summary>Conversation in threads</summary>
+
   ![Threads](./example/conversation_in_threads.gif)
+
 </details>
 
 ## Contributing
@@ -94,6 +98,6 @@ To submit an issue, select the issue template that most closely
 corresponds with your issue type and submit. Someone will get to you soon!
 
 ## Code of Conduct
-Please note that go-slack-chat-gpt3 has a [Code of Conduct](./CODE_OF_CONDUCT.md).
+Please note that slackgpt has a [Code of Conduct](./CODE_OF_CONDUCT.md).
 By participating in this community, you agree to abide by its rules. 
 Failure to abide will result in warning and potentially expulsion from this community.
