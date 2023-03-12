@@ -52,7 +52,7 @@ func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client,
 		ev.ThreadTimeStamp = ev.TimeStamp
 	}
 	// found a unique way to identify a thread
-	timestampUserChannel := ev.ThreadTimeStamp + ev.User + ev.Channel
+	timestampUserChannel := ev.ThreadTimeStamp + ev.Channel
 	log.Printf("timestamp: %v\n", ev.TimeStamp)
 	log.Printf("thread_timestamp: %v\n", ev.ThreadTimeStamp)
 	convo.UpdateConversation(timestampUserChannel, ev.Text)
