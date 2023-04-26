@@ -1,6 +1,9 @@
 package slackhandler
 
-import "sync"
+import (
+	"log"
+	"sync"
+)
 
 // conversation stores user+channel conversations in a concurrency safe way
 type conversation struct {
@@ -59,4 +62,27 @@ func (c *conversation) Get(key string) ([]string, bool) {
 	defer c.Unlock()
 	value, ok := c.data[key]
 	return value, ok
+}
+
+// ClearConversation delete current conversation history
+func (c *conversation) ClearConversation(userChannelThreadKey string) bool {
+	c.Lock()
+	defer c.Unlock()
+
+	// Key exists in the map delete it from map and return true
+	if _, ok := c.data[userChannelThreadKey]; ok {
+
+		delete(c.data, userChannelThreadKey)
+		return true
+	} else {
+		// Key does not exist in the map
+		return false
+	}
+}
+
+// LogConversationHistoryKvPairs chat history to be logged
+func (c *conversation) LogConversationHistoryKvPairs() {
+	for k, v := range c.data {
+		log.Printf("Key: %s, Value: %v, Length: %d\n", k, v, len(v))
+	}
 }

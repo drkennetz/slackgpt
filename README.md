@@ -6,8 +6,8 @@
     <a href="https://github.com/drkennetz/slackgpt">
         <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/drkennetz/slackgpt/ci.yml">
     </a>
-    <a href="https://codecov.io/github/drkennetz/slackgpt" > 
-        <img src="https://codecov.io/github/drkennetz/slackgpt/branch/main/graph/badge.svg?token=8IHKB8J1AN"/> 
+    <a href="https://codecov.io/github/drkennetz/slackgpt" >
+        <img src="https://codecov.io/github/drkennetz/slackgpt/branch/main/graph/badge.svg?token=8IHKB8J1AN"/>
     </a>
     <a href="https://github.com/drkennetz/slackgpt/issues">
         <img src="https://img.shields.io/github/issues/drkennetz/slackgpt" alt="Issues">
@@ -90,14 +90,19 @@ socketmode: 2023/02/01 14:53:19 socket_mode_managed_conn.go:258: Starting Socket
 
 </details>
 
+## Slack Commands
+| **Command** | **Description** | **Usage Example** |
+|---|---|---|
+| clear convo | clear conversation of thread where command is called | '@slackgpt clear convo' |
+
 ## Contributing
 Please follow the [Contribution File](./Contribution.md) to contribute to this repo.
 
 ## Issues
-To submit an issue, select the issue template that most closely 
+To submit an issue, select the issue template that most closely
 corresponds with your issue type and submit. Someone will get to you soon!
 
 ## Code of Conduct
 Please note that slackgpt has a [Code of Conduct](./CODE_OF_CONDUCT.md).
-By participating in this community, you agree to abide by its rules. 
+By participating in this community, you agree to abide by its rules.
 Failure to abide will result in warning and potentially expulsion from this community.
