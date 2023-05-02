@@ -62,7 +62,7 @@ Once you have this key, add it to your config file as:
 
 ![messages post](./messages_post.png)
 
-15. Finally, we need to collect our 2 tokens. Scroll up the OAuth page, and click "Install to Workspace". If you are an admin, this will happen automatically. If not, it will send a request.
+15. Finally, we need to collect our 2 tokens. Scroll up and click the OAuth page, find and click "Install to Workspace". If you are an admin, this will happen automatically. If not, it will send a request.
 
 ![admin view](./admin_view.png)
 

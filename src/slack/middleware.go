@@ -29,10 +29,9 @@ func middlewareHello(evt *socketmode.Event, client *socketmode.Client, logger *l
 	logger.Println("Hello received from hello handler")
 }
 
-// we have to org this in such a way that this part does the chatGPT stuff
-// but it needs the tokens from the environment
-func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client,
-	gptClient *openai.Client, ctx context.Context, logger *log.Logger, convo *conversation) {
+// TODO: debug through here to test out clear convo
+// TODO: we have to org this in such a way that this part does the chatGPT stuff but it needs the tokens from the environment
+func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client, gptClient *openai.Client, ctx context.Context, logger *log.Logger, convo *conversation) {
 	logger.Println("Hello from AppMention middleware")
 	eventsAPIEvent, ok := evt.Data.(slackevents.EventsAPIEvent)
 	if !ok {
@@ -52,12 +51,26 @@ func middlewareAppMentionEvent(evt *socketmode.Event, client *socketmode.Client,
 		ev.ThreadTimeStamp = ev.TimeStamp
 	}
 	// found a unique way to identify a thread
-	timestampUserChannel := ev.ThreadTimeStamp + ev.Channel
+	userChannelThreadKey := ev.ThreadTimeStamp + ev.Channel
+
 	log.Printf("timestamp: %v\n", ev.TimeStamp)
 	log.Printf("thread_timestamp: %v\n", ev.ThreadTimeStamp)
-	convo.UpdateConversation(timestampUserChannel, ev.Text)
-	gpt3Resp, err := chatgpt.GetStringResponse(gptClient, ctx, convo.data[timestampUserChannel])
-	convo.UpdateConversation(timestampUserChannel, gpt3Resp)
+	convo.UpdateConversation(userChannelThreadKey, ev.Text)
+
+	gpt3Resp, err := chatgpt.GetStringResponse(gptClient, ctx, convo.data[userChannelThreadKey])
+	if strings.Contains(strings.ToLower(ev.Text), "clear convo") {
+		log.Println("Preparing to clear various conversation history.")
+		convo.LogConversationHistoryKvPairs()
+		if convo.ClearConversation(userChannelThreadKey) {
+			gpt3Resp = "Done. Conversation history cleared."
+		} else {
+			gpt3Resp = "Encountered issue when clearing conversation history."
+		}
+		log.Println("Various conversation history cleared.")
+		convo.LogConversationHistoryKvPairs()
+	}
+
+	convo.UpdateConversation(userChannelThreadKey, gpt3Resp)
 	if err != nil {
 		logger.Printf("Failed to get gpt3 response: %v\n", err)
 		gpt3Resp = "I'm having some trouble communicating with our servers (my brain). Please try again in a little bit and hopefully the fuzz clears up."
